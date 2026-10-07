@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build and Packaging outputs
+dist/
+release/
+*.exe
+*.lnk
+
+# Environment and sensitive files
+.env
+.env.*
+*.log
+
+# Temporary and debug artifacts
+scripts/_temp_*
+tools/debug-scripts/_temp_*
+*.tmp
+
+# Operating System files
+.DS_Store
+Thumbs.db
