@@ -1,8 +1,8 @@
 # AcademiCal Desktop — Academic Companion for Google Calendar
 
-[![Download Installer](https://img.shields.io/badge/Instalador-Windows_.exe_(v1.0.0)-2563eb?logo=windows&logoColor=white)](https://github.com/dario/academic-calendar-desktop/releases/latest)
-[![Portable Zip](https://img.shields.io/badge/Portable-.zip_(x64)-475569?logo=zip&logoColor=white)](https://github.com/dario/academic-calendar-desktop/releases/latest)
-[![CI Quality Gate](https://github.com/dario/academic-calendar-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/dario/academic-calendar-desktop/actions)
+[![Download Installer](https://img.shields.io/badge/Instalador-Windows_.exe_(v1.0.0)-2563eb?logo=windows&logoColor=white)](https://github.com/dukecorse1972/academic-calendar-desktop/releases/latest)
+[![Portable Zip](https://img.shields.io/badge/Portable-.zip_(x64)-475569?logo=zip&logoColor=white)](https://github.com/dukecorse1972/academic-calendar-desktop/releases/latest)
+[![CI Quality Gate](https://github.com/dukecorse1972/academic-calendar-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/dukecorse1972/academic-calendar-desktop/actions)
 [![Electron](https://img.shields.io/badge/Electron-33.4.11-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7.2-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -26,7 +26,7 @@ AcademiCal Desktop ofrece múltiples métodos de instalación adaptados tanto a 
 
 La forma más rápida, cómoda y visual de disfrutar de AcademiCal Desktop:
 
-1. **Descarga el instalador**: Obtén la última versión de [`AcademiCal Desktop-Setup-1.0.0.exe`](https://github.com/dario/academic-calendar-desktop/releases/latest) desde la sección de Releases.
+1. **Descarga el instalador**: Obtén la última versión de [`AcademiCal Desktop-Setup-1.0.0.exe`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/latest) desde la sección de Releases.
 2. **Ejecuta el archivo**: Haz doble clic sobre el ejecutable descargado.
 3. **Instalación sin complicaciones**:
    * **Cero requisitos**: No requiere tener instalado Node.js, npm ni Git.
@@ -42,7 +42,7 @@ La forma más rápida, cómoda y visual de disfrutar de AcademiCal Desktop:
 
 Ideal si prefieres llevar la aplicación en una memoria USB o ejecutarla sin modificar el registro del sistema:
 
-1. Descarga el paquete [`AcademiCal-Desktop-v1.0.0-windows-x64.zip`](https://github.com/dario/academic-calendar-desktop/releases/latest).
+1. Descarga el paquete [`AcademiCal-Desktop-v1.0.0-windows-x64.zip`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/latest).
 2. Descomprime la carpeta en cualquier ubicación de tu equipo.
 3. Ejecuta `AcademiCal Desktop.exe` para empezar a trabajar de inmediato.
 
@@ -61,7 +61,7 @@ Si eres desarrollador, estudiante de ingeniería o deseas auditar y compilar el 
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/dario/academic-calendar-desktop.git
+git clone https://github.com/dukecorse1972/academic-calendar-desktop.git
 cd academic-calendar-desktop
 
 # 2. Instalar dependencias de desarrollo
