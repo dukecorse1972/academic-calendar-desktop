@@ -1,5 +1,7 @@
 # AcademiCal Desktop — Academic Companion for Google Calendar
 
+[![Download Installer](https://img.shields.io/badge/Instalador-Windows_.exe_(v1.0.0)-2563eb?logo=windows&logoColor=white)](https://github.com/dario/academic-calendar-desktop/releases/latest)
+[![Portable Zip](https://img.shields.io/badge/Portable-.zip_(x64)-475569?logo=zip&logoColor=white)](https://github.com/dario/academic-calendar-desktop/releases/latest)
 [![CI Quality Gate](https://github.com/dario/academic-calendar-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/dario/academic-calendar-desktop/actions)
 [![Electron](https://img.shields.io/badge/Electron-33.4.11-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7.2-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -16,14 +18,46 @@ Aplicación de escritorio de alto rendimiento para **Windows** que proporciona l
 
 ---
 
-## 🚀 Inicio Rápido
+## 🚀 Descarga e Instalación
 
-### Requisitos Previos
-* **Node.js**: v20.x o v22.x LTS
+AcademiCal Desktop ofrece múltiples métodos de instalación adaptados tanto a estudiantes y usuarios finales como a desarrolladores:
+
+### 🌟 Método 1: Instalador Oficial para Windows (Recomendado)
+
+La forma más rápida, cómoda y visual de disfrutar de AcademiCal Desktop:
+
+1. **Descarga el instalador**: Obtén la última versión de [`AcademiCal Desktop-Setup-1.0.0.exe`](https://github.com/dario/academic-calendar-desktop/releases/latest) desde la sección de Releases.
+2. **Ejecuta el archivo**: Haz doble clic sobre el ejecutable descargado.
+3. **Instalación sin complicaciones**:
+   * **Cero requisitos**: No requiere tener instalado Node.js, npm ni Git.
+   * **Sin permisos de Administrador**: Instalación segura por usuario en `%LOCALAPPDATA%\Programs\AcademiCal Desktop`, sin molestas ventanas de elevación UAC.
+   * **Experiencia visual moderna**: Asistente con interfaz personalizada, temática visual académica y banner de bienvenida.
+   * **Accesos directos automáticos**: Genera accesos directos automáticos en el **Escritorio** y en el **Menú de Inicio**.
+   * **Lanzamiento inmediato**: Se inicia automáticamente al finalizar la instalación.
+   * **Desinstalación limpia**: Integración total con *Configuración de Windows > Aplicaciones instaladas*.
+
+---
+
+### 📦 Método 2: Versión Portable (.zip)
+
+Ideal si prefieres llevar la aplicación en una memoria USB o ejecutarla sin modificar el registro del sistema:
+
+1. Descarga el paquete [`AcademiCal-Desktop-v1.0.0-windows-x64.zip`](https://github.com/dario/academic-calendar-desktop/releases/latest).
+2. Descomprime la carpeta en cualquier ubicación de tu equipo.
+3. Ejecuta `AcademiCal Desktop.exe` para empezar a trabajar de inmediato.
+
+---
+
+### 💻 Método 3: Entorno de Desarrollo (Código Fuente)
+
+Si eres desarrollador, estudiante de ingeniería o deseas auditar y compilar el código por ti mismo:
+
+#### Requisitos Previos
+* **Node.js**: v20.x o v22.x LTS (compatible con Node 24)
 * **npm**: v10+
 * **Sistema Operativo**: Windows 10 u 11 (64-bit)
 
-### Instalación y Ejecución
+#### Pasos de Instalación y Ejecución
 
 ```bash
 # 1. Clonar el repositorio
@@ -33,23 +67,23 @@ cd academic-calendar-desktop
 # 2. Instalar dependencias de desarrollo
 npm install
 
-# 3. Ejecutar suite de pruebas unitarias automatizadas
+# 3. Ejecutar la suite de pruebas automatizadas (42 tests)
 npm test
 
-# 4. Compilar TypeScript y paquetes Preload
-npm run build
-
-# 5. Iniciar la aplicación
+# 4. Iniciar la aplicación en modo desarrollo
 npm start
 ```
 
-### Crear Accesos Directos Nativos en Windows
+#### Scripts Disponibles
 
-Para anclar la aplicación al **Menú de Inicio** y al **Escritorio** de Windows sin necesidad de abrir la consola:
-
-```bash
-npm run shortcut
-```
+| Comando | Descripción |
+|---|---|
+| `npm start` | Compila TypeScript y arranca la aplicación con recarga. |
+| `npm test` | Ejecuta la suite completa de 42 pruebas unitarias e integradas con el runner nativo de Node.js. |
+| `npm run build` | Compila TypeScript del proceso principal y empaqueta el preload bundle con esbuild. |
+| `npm run dist` | Empaqueta la aplicación y compila el instalador oficial NSIS (`.exe`) en `release/`. |
+| `npm run pack` | Genera la versión desempaquetada portable en `release/win-unpacked/`. |
+| `npm run shortcut` | Crea accesos directos de Windows para el entorno local de desarrollo. |
 
 ---
 
@@ -136,11 +170,15 @@ El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
 │   │   └── utils/            # Utilidades de DOM seguras frente a CSP
 │   ├── shared/               # Constantes, tipos TypeScript y formateadores compartidos
 │   └── tests/                # Pruebas automatizadas con Node.js Test Runner
-├── assets/                   # Iconos y recursos de la aplicación
+├── assets/                   # Iconos e identidad visual (ico, png y banners del instalador)
+│   ├── icon.ico              # Icono oficial de la aplicación y del instalador
+│   ├── installer-sidebar.bmp # Banner lateral personalizado (164x314) para NSIS
+│   └── installer-header.bmp  # Cabecera gráfica (150x57) para el asistente
 ├── tools/
-│   └── debug-scripts/        # Herramientas de ingeniería inversa y benchmarking de desarrollo
+│   └── debug-scripts/        # Herramientas de ingeniería inversa y benchmarking
 ├── scripts/
-│   └── create-shortcut.js    # Utilidad nativa para accesos directos en Windows
+│   ├── create-shortcut.js    # Creación nativa de accesos directos en Windows
+│   └── generate-installer-assets.ps1 # Generador gráfico de banners para el instalador
 ├── package.json
 └── tsconfig.json
 ```
@@ -155,6 +193,27 @@ El proyecto utiliza el **Node.js Test Runner nativo** (`node:test` y `node:asser
 # Ejecutar la suite completa de pruebas
 npm test
 ```
+
+---
+
+## 📦 Empaquetado y Distribución Profesional
+
+AcademiCal Desktop utiliza **electron-builder** con el motor **NSIS (Nullsoft Scriptable Install System)** configurado para una experiencia de usuario moderna, atractiva y sin fricción:
+
+* **Instalación por usuario (`perMachine: false`)**: Se instala en `%LOCALAPPDATA%\Programs\AcademiCal Desktop`, permitiendo la instalación inmediata en cualquier equipo sin requerir contraseña de administrador ni ventanas de advertencia UAC.
+* **Asistente Visual Personalizado**: Presenta una interfaz de bienvenida con temática académica, banner lateral ilustrado con el logotipo de la aplicación y accesos directos configurados.
+* **Integración Completa con Windows**: Registra la aplicación en el Menú de Inicio y crea el acceso directo en el Escritorio.
+* **Desinstalación Nativa y Limpia**: Integra la desinstalación en *Configuración de Windows > Aplicaciones instaladas*.
+
+Para generar un nuevo instalador compilado:
+
+```bash
+npm run dist
+```
+
+Los artefactos resultantes se almacenan en `release/`:
+* `AcademiCal Desktop-Setup-1.0.0.exe`: Instalador interactivo oficial (~80 MB).
+* `AcademiCal-Desktop-v1.0.0-windows-x64.zip`: Distribución portable lista para usar (~115 MB).
 
 ---
 

@@ -14,7 +14,8 @@
     "start": "npm run build && electron .",
     "dev": "npm run build && electron .",
     "shortcut": "node scripts/create-shortcut.js",
-    "pack": "npm run build && electron-builder --dir"
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
   },
   "build": {
     "appId": "com.academic.calendar.desktop",
@@ -29,7 +30,31 @@
     ],
     "win": {
       "icon": "assets/icon.ico",
-      "target": "dir"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "AcademiCal Desktop",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "installerSidebar": "assets/installer-sidebar.bmp",
+      "uninstallerSidebar": "assets/installer-sidebar.bmp",
+      "installerHeader": "assets/installer-header.bmp",
+      "uninstallDisplayName": "AcademiCal Desktop",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "runAfterFinish": true
     }
   },
   "keywords": [
