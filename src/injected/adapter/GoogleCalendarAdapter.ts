@@ -221,17 +221,31 @@ export class GoogleCalendarAdapter {
   }
 
   /**
-   * Returns detected subjects / classes from Google Calendar rows.
+   * Returns detected subjects / classes from configured storage or Google Calendar rows.
    */
   public getDetectedClasses(): string[] {
+    // 1. First check configured subjects from onboarding / settings in localStorage
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('gcal_academic_subjects');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const names = parsed
+              .map((p: any) => (typeof p === 'string' ? p : p.name))
+              .filter(Boolean);
+            if (names.length > 0) return Array.from(new Set(names));
+          }
+        }
+      } catch (_) {}
+    }
+
     if (typeof document === 'undefined') {
       return [
-        'Clase 1',
-        'Clase 2',
-        'Clase 3',
-        'Clase 4',
-        'Clase 5',
-        'Clase 6'
+        'Matemáticas',
+        'Física',
+        'Programación',
+        'Economía'
       ];
     }
     const checkboxes = Array.from(
@@ -251,12 +265,10 @@ export class GoogleCalendarAdapter {
     return classes.length > 0
       ? Array.from(new Set(classes))
       : [
-          'Clase 1',
-          'Clase 2',
-          'Clase 3',
-          'Clase 4',
-          'Clase 5',
-          'Clase 6'
+          'Matemáticas',
+          'Física',
+          'Programación',
+          'Economía'
         ];
   }
 
@@ -319,6 +331,12 @@ export class GoogleCalendarAdapter {
           this.initialSyncDone = true;
         }
 
+        const hasAcademicCalendars = checkboxes.some((cb) => {
+          const row = cb.closest<HTMLElement>('.XXcuqd') || cb.closest<HTMLElement>('li, .DYTqTd, [role="listitem"]');
+          const rawName = cb.getAttribute('aria-label') || row?.textContent?.trim() || '';
+          return this.isAcademic(rawName);
+        });
+
         checkboxes.forEach((cb) => {
           const row = cb.closest<HTMLElement>('.XXcuqd') || cb.closest<HTMLElement>('li, .DYTqTd, [role="listitem"]');
           if (!row) return;
@@ -339,7 +357,7 @@ export class GoogleCalendarAdapter {
           if (tab === 'CLASES') {
             shouldCheck = this.isClass(rawName);
           } else if (tab === 'ENTREGAS_EXAMENES') {
-            shouldCheck = this.isAcademic(rawName);
+            shouldCheck = hasAcademicCalendars ? this.isAcademic(rawName) : true;
           } else {
             shouldCheck = true;
           }
@@ -527,6 +545,19 @@ export class GoogleCalendarAdapter {
         for (const [key, color] of Object.entries(cached)) {
           if (typeof color === 'string' && color) {
             colorMap.set(key.toLowerCase(), color);
+            colorMap.set(this.normalizeStr(key), color);
+          }
+        }
+        const storedSubjects = localStorage.getItem('gcal_academic_subjects');
+        if (storedSubjects) {
+          const parsedSubs = JSON.parse(storedSubjects);
+          if (Array.isArray(parsedSubs)) {
+            parsedSubs.forEach((s: any) => {
+              if (s && s.name && s.color) {
+                colorMap.set(s.name.toLowerCase().trim(), s.color);
+                colorMap.set(this.normalizeStr(s.name), s.color);
+              }
+            });
           }
         }
       } catch (_) {}

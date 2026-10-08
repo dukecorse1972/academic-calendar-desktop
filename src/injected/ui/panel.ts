@@ -3,6 +3,7 @@ import { AppState, AppStateData } from '../state';
 import { GoogleCalendarAdapter } from '../adapter/GoogleCalendarAdapter';
 import { CreatorModal } from './creatorModal';
 import { AcademicDetailModal } from './detailModal';
+import { OnboardingModal } from './onboardingModal';
 import { safeSetInnerHTML } from '../utils/dom';
 
 export class AcademicPanel {
@@ -70,6 +71,13 @@ export class AcademicPanel {
     const initialState = appState.getState();
     this.updateActiveTabStyles(initialState.activeTab);
     GoogleCalendarAdapter.getInstance().applyTabFilter(initialState.activeTab, true);
+
+    // 9. Trigger first-time onboarding wizard if not completed yet
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('gcal_academic_onboarding_completed') !== 'true') {
+      setTimeout(() => {
+        OnboardingModal.getInstance().open();
+      }, 700);
+    }
   }
 
   private injectFluidTabStyles(): void {
@@ -211,6 +219,7 @@ export class AcademicPanel {
         <button id="gcal-hdr-tab-clases" type="button" class="gcal-hdr-tab-btn" data-tab="CLASES">CLASES</button>
         <button id="gcal-hdr-tab-entregas" type="button" class="gcal-hdr-tab-btn" data-tab="ENTREGAS_EXAMENES">EXÁMENES Y ENTREGAS</button>
         <button id="gcal-hdr-tab-todo" type="button" class="gcal-hdr-tab-btn" data-tab="TODO">TODO</button>
+        <button id="gcal-hdr-settings-btn" type="button" class="gcal-hdr-tab-btn" style="padding: 5px 8px;" title="Configurar asignaturas y paleta de color">⚙️</button>
         `
       );
 
@@ -218,6 +227,7 @@ export class AcademicPanel {
       const tabClases = this.headerTabsContainer.querySelector('#gcal-hdr-tab-clases');
       const tabEntregas = this.headerTabsContainer.querySelector('#gcal-hdr-tab-entregas');
       const tabTodo = this.headerTabsContainer.querySelector('#gcal-hdr-tab-todo');
+      const settingsBtn = this.headerTabsContainer.querySelector('#gcal-hdr-settings-btn');
 
       tabClases?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -230,6 +240,10 @@ export class AcademicPanel {
       tabTodo?.addEventListener('click', (e) => {
         e.stopPropagation();
         appState.setActiveTab('TODO');
+      });
+      settingsBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        OnboardingModal.getInstance().open();
       });
     }
 

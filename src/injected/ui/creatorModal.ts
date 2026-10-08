@@ -2,6 +2,7 @@ import { AcademicEventPayload, EventType } from '../../shared/types';
 import { TARGET_CALENDARS } from '../../shared/constants';
 import { AppState } from '../state';
 import { GoogleCalendarAdapter } from '../adapter/GoogleCalendarAdapter';
+import { OnboardingModal } from './onboardingModal';
 import { safeSetInnerHTML, escapeHtml } from '../utils/dom';
 
 const MONTH_NAMES_ES = [
@@ -291,9 +292,20 @@ export class CreatorModal {
           <div style="display: flex; flex-direction: column; gap: 14px;">
             <!-- Asignatura con Emojis -->
             <div>
-              <label for="gcal-field-subject" style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: var(--gcal-secondary-text, #5f6368); margin-bottom: 5px;">
-                ASIGNATURA *
-              </label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label for="gcal-field-subject" style="font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: var(--gcal-secondary-text, #5f6368);">
+                  ASIGNATURA *
+                </label>
+                <button id="gcal-manage-subjects-btn" type="button" style="
+                  background: transparent;
+                  border: none;
+                  color: var(--gcal-accent, #1a73e8);
+                  font-size: 11px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  padding: 0;
+                ">⚙️ Gestionar asignaturas</button>
+              </div>
               <div style="position: relative;">
                 <select id="gcal-field-subject" style="
                   width: 100%;
@@ -867,13 +879,19 @@ export class CreatorModal {
       if (destLabel) {
         safeSetInnerHTML(
           destLabel,
-          `<span>Destino automático:</span> <strong style="color: var(--gcal-text, #1f1f1f); font-weight: 600;">🗓️ Entegras</strong>`
+          `<span>Destino automático:</span> <strong style="color: var(--gcal-text, #1f1f1f); font-weight: 600;">🗓️ Entregas</strong>`
         );
       }
     });
 
     subjectSelect?.addEventListener('change', () => {
       this.selectedSubject = subjectSelect.value;
+    });
+
+    const manageBtn = this.modalOverlay.querySelector('#gcal-manage-subjects-btn');
+    manageBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      OnboardingModal.getInstance().open();
     });
 
     // Month Navigation

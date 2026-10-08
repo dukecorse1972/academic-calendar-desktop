@@ -68,7 +68,7 @@ cd academic-calendar-desktop
 # 2. Instalar dependencias de desarrollo
 npm install
 
-# 3. Ejecutar la suite de pruebas automatizadas (42 tests)
+# 3. Ejecutar la suite de pruebas automatizadas (51 tests)
 npm test
 
 # 4. Iniciar la aplicación en modo desarrollo
@@ -80,7 +80,7 @@ npm start
 | Comando | Descripción |
 |---|---|
 | `npm start` | Compila TypeScript y arranca la aplicación con recarga. |
-| `npm test` | Ejecuta la suite completa de 42 pruebas unitarias e integradas con el runner nativo de Node.js. |
+| `npm test` | Ejecuta la suite completa de 51 pruebas unitarias e integradas con el runner nativo de Node.js. |
 | `npm run build` | Compila TypeScript del proceso principal y empaqueta el preload bundle con esbuild. |
 | `npm run dist` | Empaqueta la aplicación y compila el instalador oficial NSIS (`.exe`) en `release/`. |
 | `npm run pack` | Genera la versión desempaquetada portable en `release/win-unpacked/`. |
@@ -130,22 +130,34 @@ El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
 
 ## ✨ Características Principales
 
-1. **Gestión Académica por Contexto**:
+1. **Asistente de Configuración Inicial (Onboarding Wizard)**:
+   * **Detección inteligente de primer inicio**: Si el estudiante no tiene Google Calendar configurado, se despliega un asistente visual que le guía en 30 segundos.
+   * **Gestión dinámica de asignaturas**: Permite añadir, renombrar y eliminar las asignaturas reales que cursa este cuatrimestre, sin depender de nombres fijos ficticios.
+   * **Configuración automática de Exámenes y Entregas**: Automatiza la creación en segundo plano y vinculación de los calendarios por defecto oficiales (*Exámenes* y *Entregas*).
+
+2. **Paletas de Color Especializadas y Curadas**:
+   * Selección en 1 clic entre 4 paletas estéticas oficiales extraídas de la teoría del color y papelería de estudio:
+     * **Zebra Mildliner™ Pastel**: Tonos japoneses suaves para estudio universitario (*GoodNotes*, *Notion*).
+     * **Catppuccin™ Pastel**: Paleta moderna de alto contraste para interfaces limpias.
+     * **Nord™ Frost & Aurora**: Diseño ártico nórdico equilibrado.
+     * **Morandi Editorial**: Tonos terrosos y apagados elegantes.
+
+3. **Gestión Académica por Contexto**:
    * **Pestaña CLASES**: Muestra exclusivamente los calendarios de tus asignaturas lectivas.
    * **Pestaña ENTREGAS Y EXÁMENES**: Aísla tus hitos críticos (exámenes y fechas de entrega de proyectos) y te permite crear nuevos eventos con un solo clic.
    * **Pestaña TODO**: Vista global unificada de todas tus categorías académicas y tareas.
    * **Eliminación de Distracciones**: Oculta permanentemente elementos que saturan la interfaz como cumpleaños, accesos promocionales y botones no relevantes para el estudio.
 
-2. **Diseño Visual "Badge Pro"**:
+4. **Diseño Visual "Badge Pro"**:
    * **Exámenes**: Chips destacados con fondo sólido e intenso en el color de la asignatura, tipografía de alto contraste y borde dorado distintivo.
    * **Entregas**: Chips en tonos pastel suaves derivados matemáticamente mediante HSL sobre el color oficial del calendario, con bordes reforzados.
    * **Gestión de Entregas Realizadas**: Permite atenuar entregas completadas con reducción de opacidad y escala de grises para despejar la vista semanal.
 
-3. **Tematización Dinámica Reactiva**:
+5. **Tematización Dinámica Reactiva**:
    * Sincronización inmediata con el modo Oscuro/Claro tanto de Google Calendar como de Windows mediante `MutationObserver` y `matchMedia`, sin requerir reinicio de la aplicación.
 
-4. **Navegación Fluida por Teclado**:
-   * Navegación rápida entre semanas usando las teclas `<` y `>` o las flechas de dirección.
+6. **Simulador y Demostración 1:1 Interactiva**:
+   * Incluye [`walkthrough-1to1.html`](walkthrough-1to1.html) y [`walkthrough.html`](walkthrough.html), simuladores autocontenidos a escala real de la ventana de Windows y Google Calendar para visualizar e interactuar con el flujo sin alterar la configuración del sistema.
 
 ---
 
@@ -167,20 +179,13 @@ El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
 │   ├── injected/             # Capa académica inyectada en el DOM de Google Calendar
 │   │   ├── adapter/          # Adaptador de estilos y normalización del DOM
 │   │   ├── theme/            # Motor de tokens y detección de temas Light/Dark
-│   │   ├── ui/               # Pestañas superiores, modal de creación y modal de detalle
+│   │   ├── ui/               # Pestañas, modal de creación, visor de detalle y onboarding
 │   │   └── utils/            # Utilidades de DOM seguras frente a CSP
-│   ├── shared/               # Constantes, tipos TypeScript y formateadores compartidos
-│   └── tests/                # Pruebas automatizadas con Node.js Test Runner
+│   ├── shared/               # Constantes, tipos TypeScript, formateadores y paletas
+│   └── tests/                # 51 pruebas automatizadas con Node.js Test Runner
 ├── assets/                   # Iconos e identidad visual (ico, png y banners del instalador)
-│   ├── icon.ico              # Icono oficial de la aplicación y del instalador
-│   ├── installer-sidebar.bmp # Banner lateral personalizado (164x314) para NSIS
-│   └── installer-header.bmp  # Cabecera gráfica (150x57) para el asistente
-├── tools/
-│   └── debug-scripts/        # Herramientas de ingeniería inversa y benchmarking
-├── scripts/
-│   ├── create-shortcut.js    # Creación nativa de accesos directos en Windows
-│   ├── generate-installer-assets.ps1 # Generador gráfico de banners para el instalador
-│   └── publish-release.js    # Publicación automatizada de releases y assets en GitHub
+├── walkthrough-1to1.html     # Simulador visual 1:1 de Google Calendar y la capa académica
+├── walkthrough.html          # Guía interactiva paso a paso del flujo de onboarding
 ├── package.json
 └── tsconfig.json
 ```

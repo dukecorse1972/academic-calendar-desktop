@@ -85,23 +85,23 @@ function setupBackgroundEventCreation(customSession: Session): void {
             throw new Error('Save button not found on Google Calendar event edit page');
           }
 
-          // Switch to Entregas / Assignments if needed
-          if (${JSON.stringify(isEntrega)}) {
-            const spans = Array.from(document.querySelectorAll('span'));
-            const calSpan = spans.find(s => (s.textContent.includes('Examenes') || s.textContent.includes('Calendario') || s.textContent.includes('Calendar')) && (s.className.includes('haAclf') || s.closest('[role="combobox"]')));
-            const calTrigger = calSpan?.closest('[role="combobox"], [role="listbox"], [role="button"], div[jsname], button');
-            if (calTrigger) {
-              calTrigger.click();
-              await new Promise(r => setTimeout(r, 300));
-            }
+          // Switch to targeted academic calendar (Exámenes vs Entregas) if present
+          const spans = Array.from(document.querySelectorAll('span'));
+          const calSpan = spans.find(s => (s.textContent.includes('Calendario') || s.textContent.includes('Calendar') || s.className.includes('haAclf') || s.closest('[role="combobox"]')));
+          const calTrigger = calSpan?.closest('[role="combobox"], [role="listbox"], [role="button"], div[jsname], button');
+          if (calTrigger) {
+            calTrigger.click();
+            await new Promise(r => setTimeout(r, 300));
 
             const options = Array.from(document.querySelectorAll('[role="option"], [data-value], [role="menuitem"]'));
-            const entregaOpt = options.find(o => {
+            const matchOpt = options.find(o => {
               const txt = (o.textContent || '').toLowerCase();
-              return txt.includes('entregas') || txt.includes('entegras') || txt.includes('assignment') || txt.includes('deadline') || txt.includes('due');
+              return ${JSON.stringify(isEntrega)}
+                ? (txt.includes('entrega') || txt.includes('entegras') || txt.includes('assignment') || txt.includes('deadline') || txt.includes('due'))
+                : (txt.includes('examen') || txt.includes('exam'));
             });
-            if (entregaOpt) {
-              entregaOpt.click();
+            if (matchOpt) {
+              matchOpt.click();
               await new Promise(r => setTimeout(r, 300));
             }
           }
@@ -273,22 +273,23 @@ function setupBackgroundEventCreation(customSession: Session): void {
             throw new Error('Save button not found on Google Calendar event edit page');
           }
 
-          if (${JSON.stringify(isEntrega)}) {
-            const spans = Array.from(document.querySelectorAll('span'));
-            const calSpan = spans.find(s => (s.textContent.includes('Examenes') || s.textContent.includes('Calendario') || s.textContent.includes('Calendar')) && (s.className.includes('haAclf') || s.closest('[role="combobox"]')));
-            const calTrigger = calSpan?.closest('[role="combobox"], [role="listbox"], [role="button"], div[jsname], button');
-            if (calTrigger) {
-              calTrigger.click();
-              await new Promise(r => setTimeout(r, 300));
-            }
+          // Switch to targeted academic calendar (Exámenes vs Entregas) if present
+          const spans = Array.from(document.querySelectorAll('span'));
+          const calSpan = spans.find(s => (s.textContent.includes('Calendario') || s.textContent.includes('Calendar') || s.className.includes('haAclf') || s.closest('[role="combobox"]')));
+          const calTrigger = calSpan?.closest('[role="combobox"], [role="listbox"], [role="button"], div[jsname], button');
+          if (calTrigger) {
+            calTrigger.click();
+            await new Promise(r => setTimeout(r, 300));
 
             const options = Array.from(document.querySelectorAll('[role="option"], [data-value], [role="menuitem"]'));
-            const entregaOpt = options.find(o => {
+            const matchOpt = options.find(o => {
               const txt = (o.textContent || '').toLowerCase();
-              return txt.includes('entregas') || txt.includes('entegras') || txt.includes('assignment') || txt.includes('deadline') || txt.includes('due');
+              return ${JSON.stringify(isEntrega)}
+                ? (txt.includes('entrega') || txt.includes('entegras') || txt.includes('assignment') || txt.includes('deadline') || txt.includes('due'))
+                : (txt.includes('examen') || txt.includes('exam'));
             });
-            if (entregaOpt) {
-              entregaOpt.click();
+            if (matchOpt) {
+              matchOpt.click();
               await new Promise(r => setTimeout(r, 300));
             }
           }
@@ -368,6 +369,77 @@ function setupBackgroundEventCreation(customSession: Session): void {
           bgWindow.destroy();
         }
       }
+    });
+  });
+
+  ipcMain.handle('ensure-academic-calendars-background', async (_event, calendarNames?: string[]) => {
+    return bgTaskQueue.enqueue(async () => {
+      const namesToCreate = Array.isArray(calendarNames) && calendarNames.length > 0
+        ? calendarNames
+        : ['Exámenes', 'Entregas'];
+
+      for (const calName of namesToCreate) {
+        const bgWindow = new BrowserWindow({
+          show: false,
+          width: 1024,
+          height: 768,
+          webPreferences: {
+            session: customSession,
+            contextIsolation: true,
+            nodeIntegration: false
+          }
+        });
+
+        try {
+          await bgWindow.loadURL('https://calendar.google.com/calendar/u/0/r/settings/createcalendar');
+
+          await bgWindow.webContents.executeJavaScript(`(async () => {
+            const targetName = ${JSON.stringify(calName)};
+            const startTime = Date.now();
+            let nameInput = null;
+
+            while (Date.now() - startTime < 10000) {
+              nameInput = document.querySelector('input[aria-label*="Nombre" i], input[aria-label*="Name" i], #xNameIn, input[type="text"]');
+              if (nameInput) break;
+              await new Promise(r => setTimeout(r, 250));
+            }
+
+            if (!nameInput) {
+              throw new Error('Name input not found on create calendar page');
+            }
+
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+            if (nativeInputValueSetter) {
+              nativeInputValueSetter.call(nameInput, targetName);
+            } else {
+              nameInput.value = targetName;
+            }
+            nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+            nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 400));
+
+            const buttons = Array.from(document.querySelectorAll('button, div[role="button"]'));
+            const createBtn = buttons.find(b => {
+              const txt = (b.textContent || '').trim().toLowerCase();
+              const label = (b.getAttribute('aria-label') || '').toLowerCase();
+              return txt.includes('crear calendario') || txt.includes('create calendar') || label.includes('crear calendario') || label.includes('create calendar');
+            });
+
+            if (createBtn) {
+              createBtn.click();
+              await new Promise(r => setTimeout(r, 2500));
+            }
+          })()`);
+        } catch (err: any) {
+          console.warn('[EnsureAcademicCalendars] Background creation note:', err.message);
+        } finally {
+          if (!bgWindow.isDestroyed()) {
+            bgWindow.destroy();
+          }
+        }
+      }
+
+      return { success: true };
     });
   });
 }

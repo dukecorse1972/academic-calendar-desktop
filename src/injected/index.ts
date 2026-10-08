@@ -4,6 +4,7 @@ import { AcademicPanel } from './ui/panel';
 import { AppState } from './state';
 import { CreatorModal } from './ui/creatorModal';
 import { AcademicDetailModal } from './ui/detailModal';
+import { OnboardingModal } from './ui/onboardingModal';
 
 let isInitialized = false;
 
@@ -57,6 +58,7 @@ export function destroyCustomLayer(): void {
   AcademicPanel.getInstance().destroy();
   CreatorModal.getInstance().destroy();
   AcademicDetailModal.getInstance().destroy();
+  OnboardingModal.getInstance().close();
   AppState.getInstance().destroy();
   isInitialized = false;
 }
