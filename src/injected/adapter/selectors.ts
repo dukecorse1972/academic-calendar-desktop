@@ -18,10 +18,28 @@ export const RESILIENT_SELECTORS = {
   deleteButton: [
     '#xDelBu',
     'button[data-action="delete"]',
-    'button[aria-label*="Eliminar" i]',
-    'button[aria-label*="Delete" i]',
-    '[role="button"][aria-label*="Eliminar" i]',
-    '[role="button"][aria-label*="Delete" i]'
+    'button[aria-label*="Eliminar evento" i]',
+    'button[aria-label*="Delete event" i]',
+    '[role="button"][aria-label*="Eliminar evento" i]',
+    '[role="button"][aria-label*="Delete event" i]'
+  ],
+
+  // More actions button trigger in event edit page
+  moreActionsButton: [
+    'button[aria-label*="Más acciones" i]',
+    'button[aria-label*="Mas acciones" i]',
+    'button[aria-label*="More actions" i]',
+    '[role="button"][aria-label*="Más acciones" i]',
+    '[role="button"][aria-label*="Mas acciones" i]',
+    '[role="button"][aria-label*="More actions" i]'
+  ],
+
+  // Delete option inside More actions dropdown menu
+  deleteMenuItem: [
+    '[role="menuitem"][aria-label*="Eliminar" i]',
+    '[role="menuitem"][aria-label*="Delete" i]',
+    '.goog-menuitem[aria-label*="Eliminar" i]',
+    '.goog-menuitem[aria-label*="Delete" i]'
   ],
 
   // Calendar select dropdown in event edit page

@@ -72,11 +72,15 @@ export class AcademicPanel {
     this.updateActiveTabStyles(initialState.activeTab);
     GoogleCalendarAdapter.getInstance().applyTabFilter(initialState.activeTab, true);
 
-    // 9. Trigger first-time onboarding wizard if not completed yet
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('gcal_academic_onboarding_completed') !== 'true') {
-      setTimeout(() => {
-        OnboardingModal.getInstance().open();
-      }, 700);
+    // 9. Trigger first-time onboarding wizard only if neither completed nor subjects already configured
+    if (typeof localStorage !== 'undefined') {
+      const hasCompleted = localStorage.getItem('gcal_academic_onboarding_completed') === 'true';
+      const hasSubjects = Boolean(localStorage.getItem('gcal_academic_subjects'));
+      if (!hasCompleted && !hasSubjects) {
+        setTimeout(() => {
+          OnboardingModal.getInstance().open();
+        }, 700);
+      }
     }
   }
 
@@ -219,7 +223,6 @@ export class AcademicPanel {
         <button id="gcal-hdr-tab-clases" type="button" class="gcal-hdr-tab-btn" data-tab="CLASES">CLASES</button>
         <button id="gcal-hdr-tab-entregas" type="button" class="gcal-hdr-tab-btn" data-tab="ENTREGAS_EXAMENES">EXÁMENES Y ENTREGAS</button>
         <button id="gcal-hdr-tab-todo" type="button" class="gcal-hdr-tab-btn" data-tab="TODO">TODO</button>
-        <button id="gcal-hdr-settings-btn" type="button" class="gcal-hdr-tab-btn" style="padding: 5px 8px;" title="Configurar asignaturas y paleta de color">⚙️</button>
         `
       );
 
@@ -227,7 +230,6 @@ export class AcademicPanel {
       const tabClases = this.headerTabsContainer.querySelector('#gcal-hdr-tab-clases');
       const tabEntregas = this.headerTabsContainer.querySelector('#gcal-hdr-tab-entregas');
       const tabTodo = this.headerTabsContainer.querySelector('#gcal-hdr-tab-todo');
-      const settingsBtn = this.headerTabsContainer.querySelector('#gcal-hdr-settings-btn');
 
       tabClases?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -240,10 +242,6 @@ export class AcademicPanel {
       tabTodo?.addEventListener('click', (e) => {
         e.stopPropagation();
         appState.setActiveTab('TODO');
-      });
-      settingsBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        OnboardingModal.getInstance().open();
       });
     }
 
@@ -395,9 +393,42 @@ export class AcademicPanel {
           activeEl.getAttribute('role') === 'textbox' ||
           activeEl.getAttribute('contenteditable') === 'true' ||
           Boolean(activeEl.closest('#gcal-academic-creator-modal')) ||
-          Boolean(activeEl.closest('#gcal-academic-detail-modal')));
+          Boolean(activeEl.closest('#gcal-academic-detail-modal')) ||
+          Boolean(activeEl.closest('#gcal-onboarding-modal-overlay')));
 
-      if (isInput) return;
+      // Check if any academic modal is currently active on screen
+      const creatorEl = document.querySelector('#gcal-academic-creator-modal');
+      const isCreatorOpen = Boolean(creatorEl && creatorEl.getAttribute('style')?.includes('display: flex'));
+      const isDetailOpen = Boolean(document.querySelector('#gcal-academic-detail-modal'));
+      const isOnboardingOpen = Boolean(document.querySelector('#gcal-onboarding-modal-overlay'));
+
+      if (isInput || isCreatorOpen || isDetailOpen || isOnboardingOpen) return;
+
+      // Ignore if modifier keys (Ctrl, Alt, Meta) are held down
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // Shortcuts 1, 2, 3 for switching academic tabs
+      if (e.key === '1') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        AppState.getInstance().setActiveTab('CLASES');
+        return;
+      }
+      if (e.key === '2') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        AppState.getInstance().setActiveTab('ENTREGAS_EXAMENES');
+        return;
+      }
+      if (e.key === '3') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        AppState.getInstance().setActiveTab('TODO');
+        return;
+      }
 
       const isPrev = e.key === 'ArrowLeft' || e.key === '<' || e.key === ',';
       const isNext = e.key === 'ArrowRight' || e.key === '>' || e.key === '.';

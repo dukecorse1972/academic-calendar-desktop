@@ -419,7 +419,80 @@ describe('6. Academic Event Extended View (Detail Modal)', () => {
     assert.equal(calledWith.payload.title, 'Práctica 4 Re-entregada');
     assert.equal(calledWith.payload.date, '2026-12-20');
   });
+
+  test('AcademicDetailModal confirm delete triggers desktopApi.deleteAcademicEventBackground with eventId', async () => {
+    let deletedId: string | null = null;
+    (global as any).window = {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      gcalDesktopAPI: {
+        deleteAcademicEventBackground: async (id: string) => {
+          deletedId = id;
+          return { success: true };
+        }
+      }
+    };
+
+    let confirmClickListener: any = null;
+    const mockOverlay: any = {
+      id: '',
+      style: { cssText: '' },
+      children: [],
+      innerHTML: '',
+      remove: () => {},
+      addEventListener: () => {},
+      querySelector: (selector: string) => {
+        if (selector === '#gcal-detail-confirm-delete') {
+          return {
+            id: 'gcal-detail-confirm-delete',
+            disabled: false,
+            textContent: '',
+            addEventListener: (_event: string, fn: any) => {
+              confirmClickListener = fn;
+            }
+          };
+        }
+        return { addEventListener: () => {}, style: {}, textContent: '', value: '' };
+      },
+      querySelectorAll: () => []
+    };
+
+    (global as any).document = {
+      getElementById: () => null,
+      querySelectorAll: () => [],
+      querySelector: () => null,
+      createElement: (tag: string) => {
+        if (tag === 'div') return mockOverlay;
+        return { setAttribute: () => {}, textContent: '', appendChild: () => {} };
+      },
+      head: { appendChild: () => {} },
+      body: {
+        appendChild: () => {},
+        setAttribute: () => {},
+        getAttribute: () => null
+      }
+    };
+
+    const chip = {
+      getAttribute: (attr: string) => {
+        if (attr === 'aria-label') return 'De 10:00 a 12:00, [EXAMEN] 🧑‍💻 Programación 1 - Parcial Final, Calendario: 📋 Examenes, 15 de diciembre de 2026';
+        if (attr === 'data-eventid') return 'evt_final_9999 user@gmail.com';
+        return null;
+      },
+      querySelector: (sel: string) => (sel === '.I0UMhf' ? { textContent: '[EXAMEN] 🧑‍💻 Programación 1 - Parcial Final' } : null),
+      innerText: 'Parcial Final',
+      style: { transition: '', opacity: '' },
+      remove: () => {}
+    } as any;
+
+    modal.open(chip);
+    assert.ok(confirmClickListener, 'Confirm delete listener should be attached');
+    await confirmClickListener();
+    assert.equal(deletedId, 'evt_final_9999', 'deleteAcademicEventBackground should be called with extracted eventId');
+    modal.close();
+  });
 });
+
 
 
 

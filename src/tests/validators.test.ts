@@ -107,6 +107,7 @@ describe('7. Runtime Contract & Payload Validators', () => {
   test('isValidEventId correctly identifies valid and invalid event IDs', () => {
     assert.equal(isValidEventId('_60q30c1g60o30c1g60o30b9k60_20261120T090000Z'), true);
     assert.equal(isValidEventId('abc12345'), true);
+    assert.equal(isValidEventId('NzEzZjlmZDhpNm0ydWRxMDRkaDgxZ3V0dmY='), true);
     assert.equal(isValidEventId(''), false);
     assert.equal(isValidEventId('a'), false); // too short
     assert.equal(isValidEventId('id with spaces'), false);

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { initCustomLayer } from '../injected/index';
+import { AppState } from '../injected/state';
 
 const desktopApi = {
   createAcademicEventBackground: (payload: any) =>
@@ -42,4 +43,15 @@ window.addEventListener('load', runIfCalendar, { once: true });
 // 4. Listen for main process signal
 ipcRenderer.on('init-custom-layer', () => {
   runIfCalendar();
+});
+
+// 5. Listen for tab switch signal from system tray
+ipcRenderer.on('switch-academic-tab', (_event, tab: any) => {
+  try {
+    if (tab === 'CLASES' || tab === 'ENTREGAS_EXAMENES' || tab === 'TODO') {
+      AppState.getInstance().setActiveTab(tab);
+    }
+  } catch (err) {
+    console.error('[Preload] Error switching tab from tray:', err);
+  }
 });

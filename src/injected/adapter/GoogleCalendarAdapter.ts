@@ -423,14 +423,13 @@ export class GoogleCalendarAdapter {
 
   public triggerGridRefresh(): void {
     try {
-      const todayBtn = document.querySelector<HTMLButtonElement>(
-        'button[aria-label*="Hoy" i], button[aria-label*="Today" i]'
-      );
-      if (todayBtn) {
-        todayBtn.click();
-        return;
+      // 1. Dispatch Google Calendar refresh shortcut ('r') to invalidate in-memory event caches
+      if (typeof document !== 'undefined') {
+        const refreshKeyEv = new KeyboardEvent('keydown', { key: 'r', code: 'KeyR', bubbles: true });
+        document.dispatchEvent(refreshKeyEv);
       }
 
+      // 2. Force view redraw via week navigation if available
       const nextBtn = document.querySelector<HTMLButtonElement>(
         'button[aria-label*="semana siguiente" i], button[aria-label*="next week" i]'
       );
@@ -440,6 +439,15 @@ export class GoogleCalendarAdapter {
       if (nextBtn && prevBtn) {
         nextBtn.click();
         setTimeout(() => prevBtn.click(), 100);
+        return;
+      }
+
+      // 3. Fallback to Today button
+      const todayBtn = document.querySelector<HTMLButtonElement>(
+        'button[aria-label*="Hoy" i], button[aria-label*="Today" i]'
+      );
+      if (todayBtn) {
+        todayBtn.click();
       }
     } catch (_) {}
   }

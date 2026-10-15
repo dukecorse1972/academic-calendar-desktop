@@ -294,7 +294,9 @@ export class AcademicDetailModal {
     const subjectColor = adapter.findSubjectColor(subject, colorMap);
 
     // 9. Event ID
-    const rawEventId = chip.getAttribute('data-eventid') || '';
+    const rawEventId = (typeof chip.getAttribute === 'function' ? chip.getAttribute('data-eventid') : '') ||
+      (typeof chip.querySelector === 'function' ? chip.querySelector('[data-eventid]')?.getAttribute('data-eventid') : '') ||
+      (typeof chip.closest === 'function' ? chip.closest('[data-eventid]')?.getAttribute('data-eventid') : '') || '';
     const eventId = rawEventId.split(' ')[0] || rawEventId;
 
     // 10. Completed status
@@ -1194,6 +1196,8 @@ export class AcademicDetailModal {
     });
 
     // Delete flow
+    const isEntrega = detail.type === 'ENTREGA';
+    const deleteButtonLabel = isEntrega ? 'Quitar del todo' : 'Eliminar';
     const deleteBtn = this.modalOverlay.querySelector('#gcal-detail-btn-delete') as HTMLElement;
     const deleteConfirmBox = this.modalOverlay.querySelector('#gcal-detail-delete-confirm') as HTMLElement;
     const cancelDeleteBtn = this.modalOverlay.querySelector('#gcal-detail-cancel-delete');
@@ -1215,9 +1219,16 @@ export class AcademicDetailModal {
       confirmDeleteBtn.textContent = 'Eliminando...';
 
       try {
+        if (!detail.eventId) {
+          throw new Error('No se pudo identificar el ID del evento para eliminarlo en Google Calendar');
+        }
+
         const desktopApi = (typeof window !== 'undefined' ? (window as any).gcalDesktopAPI : null);
-        if (desktopApi && typeof desktopApi.deleteAcademicEventBackground === 'function' && detail.eventId) {
-          await desktopApi.deleteAcademicEventBackground(detail.eventId);
+        if (desktopApi && typeof desktopApi.deleteAcademicEventBackground === 'function') {
+          const res = await desktopApi.deleteAcademicEventBackground(detail.eventId);
+          if (res && res.success === false) {
+            throw new Error(res.error || 'Error al eliminar el evento de Google Calendar');
+          }
         }
 
         // Clean local storage cache
@@ -1227,6 +1238,9 @@ export class AcademicDetailModal {
           const fullKey = `${cleanKey}_${detail.subject.toLowerCase().trim()}`;
           delete meta[cleanKey];
           delete meta[fullKey];
+          if (detail.eventId) {
+            delete meta[detail.eventId];
+          }
           localStorage.setItem('gcal_academic_meta', JSON.stringify(meta));
         } catch (_) {}
 
@@ -1242,14 +1256,28 @@ export class AcademicDetailModal {
 
         this.showToast('✓ Evento eliminado de Google Calendar');
         setTimeout(() => this.close(), 700);
-      } catch (err) {
+      } catch (err: any) {
+        confirmDeleteBtn.disabled = false;
+        confirmDeleteBtn.textContent = `Sí, ${deleteButtonLabel}`;
         if (deleteConfirmBox) {
           safeSetInnerHTML(
             deleteConfirmBox,
             `
-            <span style="color: #d93025; font-size: 12px; font-weight: 600;">Error al eliminar el evento.</span>
+            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+              <span style="color: #d93025; font-size: 12px; font-weight: 600;">${escapeHtml(err?.message || 'Error al eliminar el evento.')}</span>
+              <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <button id="gcal-detail-retry-delete" type="button" style="background: #d93025; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">Reintentar</button>
+                <button id="gcal-detail-err-cancel-delete" type="button" style="background: transparent; color: inherit; border: 1px solid rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Cerrar</button>
+              </div>
+            </div>
           `
           );
+          deleteConfirmBox.querySelector('#gcal-detail-retry-delete')?.addEventListener('click', () => {
+            confirmDeleteBtn.click();
+          });
+          deleteConfirmBox.querySelector('#gcal-detail-err-cancel-delete')?.addEventListener('click', () => {
+            deleteConfirmBox.style.display = 'none';
+          });
         }
       }
     });

@@ -2,7 +2,7 @@ import { app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { DESKTOP_USER_AGENT } from './session';
-import { createMainWindow, getMainWindow } from './window';
+import { createMainWindow, getMainWindow, setIsQuitting } from './window';
 
 // Ensure user session and partition persist identically across dev and packaged executables
 // (Preserves existing logins from legacy directory if present)
@@ -32,9 +32,14 @@ if (!gotTheLock) {
   app.on('second-instance', () => {
     const mainWindow = getMainWindow();
     if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show();
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
     }
+  });
+
+  app.on('before-quit', () => {
+    setIsQuitting(true);
   });
 
   app.whenReady().then(() => {

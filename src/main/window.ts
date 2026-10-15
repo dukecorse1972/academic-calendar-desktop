@@ -6,8 +6,19 @@ import { AcademicEventPayload } from '../shared/types';
 import { formatAcademicEvent } from '../shared/formatters';
 import { validateAcademicEventPayload, isValidEventId } from '../shared/validators';
 
+import { setupTray, destroyTray } from './tray';
+
 let mainWindow: BrowserWindow | null = null;
 let ipcRegistered = false;
+let isQuitting = false;
+
+export function setIsQuitting(val: boolean): void {
+  isQuitting = val;
+}
+
+export function getIsQuitting(): boolean {
+  return isQuitting;
+}
 
 class AsyncOperationQueue {
   private queue: Promise<any> = Promise.resolve();
@@ -157,40 +168,95 @@ function setupBackgroundEventCreation(customSession: Session): void {
         await bgWindow.loadURL(targetUrl);
         await bgWindow.webContents.executeJavaScript(`(async () => {
           const startTime = Date.now();
-          let delBtn = null;
-          
-          const deleteSelectors = [
-            '#xDelBu',
-            'button[data-action="delete"]',
-            'button[aria-label*="Eliminar" i]',
-            'button[aria-label*="Delete" i]',
-            '[role="button"][aria-label*="Eliminar" i]'
-          ];
 
-          while (Date.now() - startTime < 10000) {
+          function findDirectDeleteButton() {
+            const deleteSelectors = [
+              '#xDelBu',
+              'button[data-action="delete"]',
+              'button[aria-label*="Eliminar evento" i]',
+              'button[aria-label*="Delete event" i]',
+              '[role="button"][aria-label*="Eliminar evento" i]',
+              '[role="button"][aria-label*="Delete event" i]'
+            ];
             for (const sel of deleteSelectors) {
-              delBtn = document.querySelector(sel);
-              if (delBtn) break;
+              const btn = document.querySelector(sel);
+              if (btn && btn.offsetParent !== null) return btn;
             }
-            if (!delBtn) {
-              delBtn = Array.from(document.querySelectorAll('button')).find(b => {
-                const label = (b.getAttribute('aria-label') || '').toLowerCase();
-                const txt = (b.textContent || '').trim().toLowerCase();
-                return label.includes('eliminar') || label.includes('delete') || txt === 'eliminar' || txt === 'delete';
-              });
-            }
-            if (delBtn) break;
-            await new Promise(r => setTimeout(r, 250));
+            return null;
           }
 
-          if (!delBtn) {
-            throw new Error('Delete button not found on Google Calendar event edit page');
+          let directBtn = null;
+          while (Date.now() - startTime < 10000) {
+            directBtn = findDirectDeleteButton();
+            if (directBtn) break;
+            const saveBtn = document.querySelector('#xSaveBu') || document.querySelector('button[aria-label*="Guardar" i]');
+            const moreBtn = Array.from(document.querySelectorAll('button, [role="button"]')).find(b => {
+              const txt = (b.textContent || '').trim().toLowerCase();
+              const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+              return (txt.includes('más acciones') || txt.includes('mas acciones') || txt.includes('more actions') ||
+                      aria.includes('más acciones') || aria.includes('mas acciones') || aria.includes('more actions')) &&
+                      b.offsetParent !== null;
+            });
+            if (saveBtn || moreBtn) break;
+            await new Promise(r => setTimeout(r, 200));
           }
 
-          delBtn.click();
+          if (directBtn) {
+            directBtn.click();
+          } else {
+            const allButtons = Array.from(document.querySelectorAll('button, [role="button"]'));
+            const moreActionsBtn = allButtons.find(b => {
+              const txt = (b.textContent || '').trim().toLowerCase();
+              const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+              return (txt.includes('más acciones') || txt.includes('mas acciones') || txt.includes('more actions') ||
+                      aria.includes('más acciones') || aria.includes('mas acciones') || aria.includes('more actions')) &&
+                      b.offsetParent !== null;
+            });
+
+            if (!moreActionsBtn) {
+              throw new Error('No se encontró el botón de eliminar ni el menú de Más acciones en Google Calendar');
+            }
+
+            moreActionsBtn.click();
+            await new Promise(r => setTimeout(r, 350));
+
+            const menuItems = Array.from(document.querySelectorAll('[role="menuitem"], .goog-menuitem, .JAPqpe'));
+            const delItem = menuItems.find(m => {
+              const txt = (m.textContent || '').trim().toLowerCase();
+              const aria = (m.getAttribute('aria-label') || '').toLowerCase();
+              if (txt.includes('formato') || aria.includes('formato')) return false;
+              return txt === 'eliminar' || txt === 'delete' || txt.startsWith('eliminar') || txt.startsWith('delete') ||
+                     aria === 'eliminar' || aria === 'delete';
+            });
+
+            if (!delItem) {
+              throw new Error('Opción Eliminar no encontrada en el menú de Más acciones');
+            }
+
+            delItem.click();
+          }
+
+          // Check if a modal / confirmation dialog appears (e.g. recurring event or prompt)
+          await new Promise(r => setTimeout(r, 500));
+          const dialog = document.querySelector('[role="dialog"]');
+          if (dialog && dialog.offsetParent !== null) {
+            const confirmBtn = Array.from(dialog.querySelectorAll('button, [role="button"]')).find(b => {
+              const txt = (b.textContent || '').trim().toLowerCase();
+              const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+              return txt.includes('eliminar') || txt.includes('delete') || txt.includes('aceptar') || txt.includes('ok') ||
+                     aria.includes('eliminar') || aria.includes('delete') || aria.includes('aceptar') || aria.includes('ok');
+            });
+            if (confirmBtn) {
+              confirmBtn.click();
+            }
+          }
+
+          // Allow network requests to dispatch
+          await new Promise(r => setTimeout(r, 1200));
+          return true;
         })()`);
 
-        // Wait up to 3.5s for navigation or deletion completion
+        // Wait up to 3s for navigation or deletion completion
         await new Promise((resolve) => {
           let done = false;
           const finish = () => {
@@ -200,7 +266,8 @@ function setupBackgroundEventCreation(customSession: Session): void {
             }
           };
           bgWindow.webContents.once('did-navigate', finish);
-          setTimeout(finish, 3500);
+          bgWindow.webContents.once('did-navigate-in-page', finish);
+          setTimeout(finish, 2000);
         });
 
         return { success: true };
@@ -316,35 +383,85 @@ function setupBackgroundEventCreation(customSession: Session): void {
 
           await bgWindow.webContents.executeJavaScript(`(async () => {
             const startTime = Date.now();
-            let delBtn = null;
-            
-            const deleteSelectors = [
-              '#xDelBu',
-              'button[data-action="delete"]',
-              'button[aria-label*="Eliminar" i]',
-              'button[aria-label*="Delete" i]',
-              '[role="button"][aria-label*="Eliminar" i]'
-            ];
 
-            while (Date.now() - startTime < 8000) {
+            function findDirectDeleteButton() {
+              const deleteSelectors = [
+                '#xDelBu',
+                'button[data-action="delete"]',
+                'button[aria-label*="Eliminar evento" i]',
+                'button[aria-label*="Delete event" i]',
+                '[role="button"][aria-label*="Eliminar evento" i]',
+                '[role="button"][aria-label*="Delete event" i]'
+              ];
               for (const sel of deleteSelectors) {
-                delBtn = document.querySelector(sel);
-                if (delBtn) break;
+                const btn = document.querySelector(sel);
+                if (btn && btn.offsetParent !== null) return btn;
               }
-              if (!delBtn) {
-                delBtn = Array.from(document.querySelectorAll('button')).find(b => {
-                  const label = (b.getAttribute('aria-label') || '').toLowerCase();
-                  const txt = (b.textContent || '').trim().toLowerCase();
-                  return label.includes('eliminar') || label.includes('delete') || txt === 'eliminar' || txt === 'delete';
-                });
-              }
-              if (delBtn) break;
-              await new Promise(r => setTimeout(r, 250));
+              return null;
             }
 
-            if (delBtn) {
-              delBtn.click();
+            let directBtn = null;
+            while (Date.now() - startTime < 8000) {
+              directBtn = findDirectDeleteButton();
+              if (directBtn) break;
+              const saveBtn = document.querySelector('#xSaveBu') || document.querySelector('button[aria-label*="Guardar" i]');
+              const moreBtn = Array.from(document.querySelectorAll('button, [role="button"]')).find(b => {
+                const txt = (b.textContent || '').trim().toLowerCase();
+                const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+                return (txt.includes('más acciones') || txt.includes('mas acciones') || txt.includes('more actions') ||
+                        aria.includes('más acciones') || aria.includes('mas acciones') || aria.includes('more actions')) &&
+                        b.offsetParent !== null;
+              });
+              if (saveBtn || moreBtn) break;
+              await new Promise(r => setTimeout(r, 200));
             }
+
+            if (directBtn) {
+              directBtn.click();
+            } else {
+              const allButtons = Array.from(document.querySelectorAll('button, [role="button"]'));
+              const moreActionsBtn = allButtons.find(b => {
+                const txt = (b.textContent || '').trim().toLowerCase();
+                const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+                return (txt.includes('más acciones') || txt.includes('mas acciones') || txt.includes('more actions') ||
+                        aria.includes('más acciones') || aria.includes('mas acciones') || aria.includes('more actions')) &&
+                        b.offsetParent !== null;
+              });
+
+              if (moreActionsBtn) {
+                moreActionsBtn.click();
+                await new Promise(r => setTimeout(r, 350));
+
+                const menuItems = Array.from(document.querySelectorAll('[role="menuitem"], .goog-menuitem, .JAPqpe'));
+                const delItem = menuItems.find(m => {
+                  const txt = (m.textContent || '').trim().toLowerCase();
+                  const aria = (m.getAttribute('aria-label') || '').toLowerCase();
+                  if (txt.includes('formato') || aria.includes('formato')) return false;
+                  return txt === 'eliminar' || txt === 'delete' || txt.startsWith('eliminar') || txt.startsWith('delete') ||
+                         aria === 'eliminar' || aria === 'delete';
+                });
+
+                if (delItem) {
+                  delItem.click();
+                }
+              }
+            }
+
+            await new Promise(r => setTimeout(r, 500));
+            const dialog = document.querySelector('[role="dialog"]');
+            if (dialog && dialog.offsetParent !== null) {
+              const confirmBtn = Array.from(dialog.querySelectorAll('button, [role="button"]')).find(b => {
+                const txt = (b.textContent || '').trim().toLowerCase();
+                const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+                return txt.includes('eliminar') || txt.includes('delete') || txt.includes('aceptar') || txt.includes('ok') ||
+                       aria.includes('eliminar') || aria.includes('delete') || aria.includes('aceptar') || aria.includes('ok');
+              });
+              if (confirmBtn) {
+                confirmBtn.click();
+              }
+            }
+
+            await new Promise(r => setTimeout(r, 1200));
           })()`);
 
           await new Promise((resolve) => {
@@ -356,7 +473,8 @@ function setupBackgroundEventCreation(customSession: Session): void {
               }
             };
             bgWindow.webContents.once('did-navigate', finish);
-            setTimeout(finish, 3000);
+            bgWindow.webContents.once('did-navigate-in-page', finish);
+            setTimeout(finish, 2000);
           });
         }
 
@@ -564,9 +682,19 @@ export function createMainWindow(): BrowserWindow {
 
   mainWindow.loadURL(GOOGLE_CALENDAR_URL);
 
+  mainWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
+    destroyTray();
   });
+
+  setupTray(mainWindow);
 
   return mainWindow;
 }

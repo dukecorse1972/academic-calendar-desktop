@@ -9,10 +9,12 @@ describe('8. Resilient DOM Selectors & Strategy Dictionaries', () => {
     assert.ok(RESILIENT_SELECTORS.saveButton.some((s) => s.includes('Save')));
   });
 
-  test('RESILIENT_SELECTORS includes robust semantic fallbacks for delete button', () => {
+  test('RESILIENT_SELECTORS includes robust semantic fallbacks for delete button and more actions menu', () => {
     assert.ok(RESILIENT_SELECTORS.deleteButton.includes('#xDelBu'));
     assert.ok(RESILIENT_SELECTORS.deleteButton.some((s) => s.includes('Eliminar')));
     assert.ok(RESILIENT_SELECTORS.deleteButton.some((s) => s.includes('Delete')));
+    assert.ok(RESILIENT_SELECTORS.moreActionsButton.some((s) => s.includes('Más acciones')));
+    assert.ok(RESILIENT_SELECTORS.deleteMenuItem.some((s) => s.includes('Eliminar')));
   });
 
   test('RESILIENT_SELECTORS includes robust ARIA fallbacks for calendar rows and chips', () => {

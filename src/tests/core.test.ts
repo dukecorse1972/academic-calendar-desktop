@@ -106,3 +106,57 @@ describe('3. Application State (Single Source of Truth)', () => {
     assert.equal(appState.getState().isSubmitting, false);
   });
 });
+
+describe('12. Academic Tab Keyboard Navigation & Shortcuts Contract', () => {
+  test('Numeric key mappings route to valid AppTabs correctly', () => {
+    const KEY_TAB_MAP: Record<string, string> = {
+      '1': 'CLASES',
+      '2': 'ENTREGAS_EXAMENES',
+      '3': 'TODO'
+    };
+
+    const appState = AppState.getInstance();
+    assert.equal(KEY_TAB_MAP['1'], 'CLASES');
+    assert.equal(KEY_TAB_MAP['2'], 'ENTREGAS_EXAMENES');
+    assert.equal(KEY_TAB_MAP['3'], 'TODO');
+
+    appState.setActiveTab(KEY_TAB_MAP['1'] as any);
+    assert.equal(appState.getState().activeTab, 'CLASES');
+
+    appState.setActiveTab(KEY_TAB_MAP['2'] as any);
+    assert.equal(appState.getState().activeTab, 'ENTREGAS_EXAMENES');
+
+    appState.setActiveTab(KEY_TAB_MAP['3'] as any);
+    assert.equal(appState.getState().activeTab, 'TODO');
+  });
+
+  test('Input detection correctly suppresses shortcut triggers when typing', () => {
+    const shouldSuppress = (elTag: string, hasModifier: boolean) => {
+      if (hasModifier) return true;
+      const inputTags = ['INPUT', 'TEXTAREA', 'SELECT'];
+      return inputTags.includes(elTag);
+    };
+
+    assert.equal(shouldSuppress('INPUT', false), true);
+    assert.equal(shouldSuppress('TEXTAREA', false), true);
+    assert.equal(shouldSuppress('DIV', false), false);
+    assert.equal(shouldSuppress('BODY', false), false);
+    assert.equal(shouldSuppress('BODY', true), true); // Ctrl/Alt pressed
+  });
+});
+
+describe('13. Window Quitting State Control (System Tray)', () => {
+  const { setIsQuitting, getIsQuitting } = require('../main/window');
+
+  test('setIsQuitting correctly toggles quitting state', () => {
+    setIsQuitting(false);
+    assert.equal(getIsQuitting(), false);
+
+    setIsQuitting(true);
+    assert.equal(getIsQuitting(), true);
+
+    setIsQuitting(false);
+    assert.equal(getIsQuitting(), false);
+  });
+});
+

@@ -11,6 +11,7 @@ export class OnboardingModal {
   private static instance: OnboardingModal | null = null;
   private modalOverlay: HTMLElement | null = null;
   private selectedPaletteId: string = 'mildliner';
+  private escHandler: ((e: KeyboardEvent) => void) | null = null;
   private subjects: SubjectConfig[] = [
     { name: 'Matemáticas', color: '#98D5E8' },
     { name: 'Física', color: '#A1D0CA' },
@@ -65,7 +66,20 @@ export class OnboardingModal {
     this.render();
   }
 
+  public markCompleted(): void {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('gcal_academic_onboarding_completed', 'true');
+      } catch (_) {}
+    }
+  }
+
   public close(): void {
+    this.markCompleted();
+    if (this.escHandler && typeof window !== 'undefined') {
+      window.removeEventListener('keydown', this.escHandler);
+      this.escHandler = null;
+    }
     if (this.modalOverlay) {
       this.modalOverlay.remove();
       this.modalOverlay = null;
@@ -465,10 +479,26 @@ export class OnboardingModal {
       });
     });
 
-    // Close swatch popover on outside click
-    this.modalOverlay.addEventListener('click', () => {
+    // Close swatch popover on outside click, or close modal if clicking backdrop
+    this.modalOverlay.addEventListener('click', (e) => {
       this.modalOverlay?.querySelectorAll<HTMLElement>('.gcal-swatch-popover').forEach((p) => p.style.display = 'none');
+      if (e.target === this.modalOverlay) {
+        this.close();
+      }
     });
+
+    // Close on Escape key
+    if (this.escHandler && typeof window !== 'undefined') {
+      window.removeEventListener('keydown', this.escHandler);
+    }
+    this.escHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        this.close();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', this.escHandler);
+    }
 
     // 5. Submit handler
     submitBtn?.addEventListener('click', () => this.handleSubmit());

@@ -851,7 +851,7 @@
   <!-- SCENARIO DESCRIPTION CALLOUT -->
   <div id="scenario-banner">
     <div id="scenario-text">
-      <strong>Escenario 1: Estudiante sin configurar</strong> — La aplicación se inicia por primera vez. Se inyecta la cápsula de pestañas <code>[ 🎓 CLASES | EXÁMENES Y ENTREGAS | TODO | ⚙️ ]</code>. En el sidebar solo existe su calendario personal ("Juan Pérez").
+      <strong>Escenario 1: Estudiante sin configurar</strong> — La aplicación se inicia por primera vez. Se inyecta la cápsula de pestañas <code>[ 🎓 CLASES | EXÁMENES Y ENTREGAS | TODO ]</code>. En el sidebar solo existe su calendario personal ("Juan Pérez").
     </div>
     <div style="font-size: 11px; opacity: 0.8;">Ventana Electron 1280 × 850 nativa</div>
   </div>
@@ -912,7 +912,6 @@
             <button class="gcal-hdr-tab-btn" data-tab="CLASES" onclick="setTab('CLASES')">CLASES</button>
             <button class="gcal-hdr-tab-btn active" data-tab="ENTREGAS_EXAMENES" onclick="setTab('ENTREGAS_EXAMENES')">EXÁMENES Y ENTREGAS</button>
             <button class="gcal-hdr-tab-btn" data-tab="TODO" onclick="setTab('TODO')">TODO</button>
-            <button class="gcal-hdr-tab-btn" onclick="switchScene(2)" style="padding: 5px 8px;" title="Configurar Asignaturas y Paleta">⚙️</button>
           </div>
 
           <div class="gcal-topbar-right">
@@ -1407,7 +1406,7 @@
     ];
 
     const SCENARIO_DESCRIPTIONS = {
-      1: '<strong>Escenario 1: Estudiante sin configurar</strong> — La aplicación se inicia por primera vez. Se inyecta la cápsula de pestañas <code>[ 🎓 CLASES | EXÁMENES Y ENTREGAS | TODO | ⚙️ ]</code>. En el sidebar solo existe su calendario personal ("Juan Pérez").',
+      1: '<strong>Escenario 1: Estudiante sin configurar</strong> — La aplicación se inicia por primera vez. Se inyecta la cápsula de pestañas <code>[ 🎓 CLASES | EXÁMENES Y ENTREGAS | TODO ]</code>. En el sidebar solo existe su calendario personal ("Juan Pérez").',
       2: '<strong>Escenario 2: Asistente Onboarding 1:1</strong> — Se despliega automáticamente el asistente de bienvenida para que el alumno elija su paleta especializada (Zebra Mildliner, Catppuccin, Nord, Morandi) y añada sus asignaturas.',
       3: '<strong>Escenario 3: Modal de Creación 1:1</strong> — Al pulsar "+ Crear" en Google Calendar, se intercepta la acción para desplegar el modal optimizado con las asignaturas de la paleta y mini-calendario visual.',
       4: '<strong>Escenario 4: Parrilla Semanal "Badge Pro" 1:1</strong> — La vista definitiva de Google Calendar con los eventos académicos destacados en el color de su asignatura, bordes dorados en exámenes y tonos pastel en entregas.',

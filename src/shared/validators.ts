@@ -101,5 +101,5 @@ export function isValidEventId(eventId: unknown): eventId is string {
   if (typeof eventId !== 'string') return false;
   const trimmed = eventId.trim();
   // Google Calendar event IDs are alphanumeric / base64 encoded strings
-  return trimmed.length >= 4 && trimmed.length <= 256 && /^[a-zA-Z0-9_-]+$/.test(trimmed);
+  return trimmed.length >= 4 && trimmed.length <= 256 && /^[a-zA-Z0-9_=-]+$/.test(trimmed);
 }
