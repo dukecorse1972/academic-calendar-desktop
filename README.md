@@ -40,17 +40,15 @@
 
 ## 🖥️ Interfaz Integrada
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 📅 Google Calendar   [Hoy]  <  >   [ 🔍 Buscar en la agenda... ]                  (⚙️)   (Perfil)│
-│                                                                                    │             │
-│   ┌──────────────────────────────────────────────┐              ┌──────────────────┴─────────┐   │
-│   │ 🎓 [1 CLASES]   [2 ENTREGAS Y EXÁMENES]   [3 TODO] │              │ Configuración              │   │
-│   └──────────────────────────────────────────────┘              │ 🎓 Ajustes de Curso (Ctrl+,) │   │
-│                                                                 │ Papelera                   │   │
-│                                                                 └────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/interface-preview.svg" width="100%" alt="Vista previa de la interfaz de AcademiCal Desktop integrada en Google Calendar" />
+</p>
+
+La capa de **AcademiCal Desktop** no sobrecarga la interfaz de Google Calendar; se integra directamente con sus componentes oficiales en 3 puntos clave:
+
+* **Cápsula de Contexto (`1`, `2`, `3`)**: Centrada en la cabecera, conmuta en 0ms entre tus clases lectivas, tus fechas críticas de exámenes/entregas y la vista global.
+* **Ajustes Mimetizados en el Engranaje (`⚙️` o `Ctrl+,`)**: Ubicación natural en el menú desplegable oficial de Google, sin desajustar el buscador ni desplazar los iconos de usuario.
+* **Chips Semanales "Badge Pro"**: Reconocimiento visual instantáneo entre **Exámenes** (bloque sólido de alto impacto), **Entregas** (tonos pastel HSL suaves) y tareas completadas (**✓ HECHA**).
 
 ---
 
