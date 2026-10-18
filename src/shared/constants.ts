@@ -26,4 +26,7 @@ export const TARGET_CALENDARS = {
 } as const;
 
 export const GOOGLE_CALENDAR_URL = 'https://calendar.google.com/calendar/u/0/r';
+export function getGoogleCalendarUrl(accountIndex: number | string = 0): string {
+  return `https://calendar.google.com/calendar/u/${accountIndex}/r`;
+}
 export const PARTITION_NAME = 'persist:gcal_session';

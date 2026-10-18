@@ -3,6 +3,8 @@
  * Supports Spanish, English, and ISO date parsing for Google Calendar chips and dialogs.
  */
 
+import { getLocale } from '../../shared/i18n';
+
 export const MONTHS_MAP: Record<string, number> = {
   // Spanish
   enero: 0,
@@ -119,16 +121,22 @@ export function parseAcademicDateString(allText: string, sh: number = 9, sm: num
 
   if (hasMatch) {
     eventDate = new Date(matchedYear, matchedMonth, matchedDay, sh, sm);
-    const capMonth = MONTH_NAMES_ES[matchedMonth] || 'Mes';
-    const weekDayName = eventDate.toLocaleDateString('es-ES', { weekday: 'long' });
+    const isEn = getLocale() === 'en';
+    const capMonth = isEn ? (MONTH_NAMES_EN[matchedMonth] || 'Month') : (MONTH_NAMES_ES[matchedMonth] || 'Mes');
+    const weekDayName = eventDate.toLocaleDateString(isEn ? 'en-US' : 'es-ES', { weekday: 'long' });
     const capWeekDay = weekDayName.charAt(0).toUpperCase() + weekDayName.slice(1);
-    dateStr = `${capWeekDay}, ${matchedDay} de ${capMonth} de ${matchedYear}`;
+    dateStr = isEn
+      ? `${capWeekDay}, ${capMonth} ${matchedDay}, ${matchedYear}`
+      : `${capWeekDay}, ${matchedDay} de ${capMonth} de ${matchedYear}`;
     isoDate = `${matchedYear}-${String(matchedMonth + 1).padStart(2, '0')}-${String(matchedDay).padStart(2, '0')}`;
   } else {
     const now = new Date();
-    const capMonth = now.toLocaleDateString('es-ES', { month: 'long' });
-    const capWeekDay = now.toLocaleDateString('es-ES', { weekday: 'long' });
-    dateStr = `${capWeekDay.charAt(0).toUpperCase() + capWeekDay.slice(1)}, ${now.getDate()} de ${capMonth} de ${now.getFullYear()}`;
+    const isEn = getLocale() === 'en';
+    const capMonth = now.toLocaleDateString(isEn ? 'en-US' : 'es-ES', { month: 'long' });
+    const capWeekDay = now.toLocaleDateString(isEn ? 'en-US' : 'es-ES', { weekday: 'long' });
+    dateStr = isEn
+      ? `${capWeekDay.charAt(0).toUpperCase() + capWeekDay.slice(1)}, ${capMonth} ${now.getDate()}, ${now.getFullYear()}`
+      : `${capWeekDay.charAt(0).toUpperCase() + capWeekDay.slice(1)}, ${now.getDate()} de ${capMonth} de ${now.getFullYear()}`;
     eventDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm);
     isoDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
@@ -155,8 +163,9 @@ export function calculateDuration(startTime: string, endTime: string): string {
   const durH = Math.floor(diffMins / 60);
   const durM = diffMins % 60;
 
+  const isEn = getLocale() === 'en';
   if (durH > 0 && durM > 0) return `${durH} h ${durM} min`;
-  if (durH > 0) return `${durH} hora${durH > 1 ? 's' : ''}`;
+  if (durH > 0) return isEn ? `${durH} hour${durH > 1 ? 's' : ''}` : `${durH} hora${durH > 1 ? 's' : ''}`;
   return `${durM} min`;
 }
 

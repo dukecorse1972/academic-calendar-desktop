@@ -67,9 +67,9 @@ export class GoogleCalendarAdapter {
   public shouldShowOtherCalendars(): boolean {
     try {
       const val = getIsolatedItem('gcal_show_other_calendars');
-      return val === 'true';
+      return val !== 'false';
     } catch {
-      return false;
+      return true;
     }
   }
 
@@ -238,7 +238,7 @@ export class GoogleCalendarAdapter {
   }
 
   public isAcademic(name: string): boolean {
-    return /examen|exam|entrega|entegra|deadline|assignment|due|klausur|prüfung|devoir|assignement/i.test(name);
+    return /examen|exam|entrega|entegra|pr[aá]ctica|laboratorio|proyecto|control|parcial|quiz|deadline|assignment|due|klausur|prüfung|devoir|assignement/i.test(name);
   }
 
   public isOther(name: string): boolean {
@@ -760,7 +760,7 @@ export class GoogleCalendarAdapter {
       const ariaHidden = chip.querySelector('.XuJrye')?.textContent || '';
       const allText = `${chip.innerText || ''} ${rawAria} ${ariaHidden}`;
 
-      const isAcademic = /examen|exam|entrega|entegra|deadline|assignment|due/i.test(allText);
+      const isAcademic = /examen|exam|entrega|entegra|pr[aá]ctica|laboratorio|proyecto|control|parcial|quiz|deadline|assignment|due/i.test(allText);
       if (!isAcademic) {
         const existing = chip.querySelector('.custom-academic-container');
         if (existing) {
@@ -799,11 +799,11 @@ export class GoogleCalendarAdapter {
 
       // Parse components: 1 Tipo, 2 Asignatura, 3 Título
       let type: EventType = 'EXAMEN';
-      if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|deadline|assignment|due/i.test(allText)) {
+      if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|pr[aá]ctica|laboratorio|proyecto|deadline|assignment|due/i.test(allText)) {
         type = 'ENTREGA';
-      } else if (/calendario:\s*[^,]*exam/i.test(allText) || /\[EXAMEN\]/i.test(allText) || /examen|exam/i.test(allText)) {
+      } else if (/calendario:\s*[^,]*exam/i.test(allText) || /\[EXAMEN\]/i.test(allText) || /examen|exam|parcial|control|quiz/i.test(allText)) {
         type = 'EXAMEN';
-      } else if (/entrega|entegra/i.test(allText)) {
+      } else if (/entrega|entegra|pr[aá]ctica|laboratorio|proyecto/i.test(allText)) {
         type = 'ENTREGA';
       }
 

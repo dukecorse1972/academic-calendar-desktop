@@ -22,6 +22,17 @@ export function getIsQuitting(): boolean {
   return isQuitting;
 }
 
+export function getActiveAccountIndex(): string {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const currentUrl = mainWindow.webContents.getURL() || '';
+    const match = currentUrl.match(/\/calendar\/u\/(\d+)/);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return '0';
+}
+
 class AsyncOperationQueue {
   private queue: Promise<any> = Promise.resolve();
 
@@ -47,9 +58,10 @@ function setupBackgroundEventCreation(customSession: Session): void {
         return { success: false, error: validation.errors.join('; ') };
       }
 
-      // 2. Format standardized academic event payload and edit URL
-      const { targetUrl } = formatAcademicEvent(payload);
-      logger.info('BackgroundEventCreate', `Creating event: ${payload.title} (${payload.type})`);
+      // 2. Format standardized academic event payload and edit URL with dynamic account index
+      const accountIndex = getActiveAccountIndex();
+      const { targetUrl } = formatAcademicEvent(payload, accountIndex);
+      logger.info('BackgroundEventCreate', `Creating event: ${payload.title} (${payload.type}) for account index ${accountIndex}`);
 
       const bgWindow = new BrowserWindow({
         show: false,
@@ -149,8 +161,9 @@ function setupBackgroundEventCreation(customSession: Session): void {
         return { success: false, error: 'Invalid or malformed eventId provided' };
       }
 
-      logger.info('BackgroundEventDelete', 'Deleting event: ' + eventId);
-      const targetUrl = `https://calendar.google.com/calendar/u/0/r/eventedit/${eventId}`;
+      const accountIndex = getActiveAccountIndex();
+      logger.info('BackgroundEventDelete', `Deleting event: ${eventId} for account index ${accountIndex}`);
+      const targetUrl = `https://calendar.google.com/calendar/u/${accountIndex}/r/eventedit/${eventId}`;
       const bgWindow = new BrowserWindow({
         show: false,
         width: 1024,
@@ -306,12 +319,13 @@ function setupBackgroundEventCreation(customSession: Session): void {
 
       try {
         let editedInPlace = false;
+        const accountIndex = getActiveAccountIndex();
 
         // Try atomic in-place edit on existing event to avoid duplicate risk [P2-03]
         if (data.eventId && isValidEventId(data.eventId)) {
           try {
-            logger.info('BackgroundEventMove', `Attempting atomic in-place reschedule for event ${data.eventId}`);
-            const editUrl = `https://calendar.google.com/calendar/u/0/r/eventedit/${data.eventId}`;
+            logger.info('BackgroundEventMove', `Attempting atomic in-place reschedule for event ${data.eventId} on account ${accountIndex}`);
+            const editUrl = `https://calendar.google.com/calendar/u/${accountIndex}/r/eventedit/${data.eventId}`;
             await bgWindow.loadURL(editUrl);
 
             await bgWindow.webContents.executeJavaScript(`(async () => {
@@ -394,7 +408,7 @@ function setupBackgroundEventCreation(customSession: Session): void {
 
         if (!editedInPlace) {
           // Fallback: Create new event first, and only delete old on success
-          const { targetUrl } = formatAcademicEvent(data.payload);
+          const { targetUrl } = formatAcademicEvent(data.payload, accountIndex);
           const isEntrega = data.payload.type === 'ENTREGA';
           await bgWindow.loadURL(targetUrl);
 
@@ -459,89 +473,94 @@ function setupBackgroundEventCreation(customSession: Session): void {
 
           // Delete old event ONLY after new event is confirmed saved
           if (data.eventId && isValidEventId(data.eventId)) {
-            const deleteUrl = `https://calendar.google.com/calendar/u/0/r/eventedit/${data.eventId}`;
-            await bgWindow.loadURL(deleteUrl);
+            try {
+              const deleteUrl = `https://calendar.google.com/calendar/u/${accountIndex}/r/eventedit/${data.eventId}`;
+              await bgWindow.loadURL(deleteUrl);
 
-            await bgWindow.webContents.executeJavaScript(`(async () => {
-              const startTime = Date.now();
-              const deleteSelectors = ${JSON.stringify(RESILIENT_SELECTORS.deleteButton)};
-              const moreSelectors = ${JSON.stringify(RESILIENT_SELECTORS.moreActionsButton)};
+              await bgWindow.webContents.executeJavaScript(`(async () => {
+                const startTime = Date.now();
+                const deleteSelectors = ${JSON.stringify(RESILIENT_SELECTORS.deleteButton)};
+                const moreSelectors = ${JSON.stringify(RESILIENT_SELECTORS.moreActionsButton)};
 
-              function findDirectDeleteButton() {
-                for (const sel of deleteSelectors) {
-                  const btn = document.querySelector(sel);
-                  if (btn && btn.offsetParent !== null) return btn;
+                function findDirectDeleteButton() {
+                  for (const sel of deleteSelectors) {
+                    const btn = document.querySelector(sel);
+                    if (btn && btn.offsetParent !== null) return btn;
+                  }
+                  return null;
                 }
-                return null;
-              }
 
-              let directBtn = null;
-              while (Date.now() - startTime < 8000) {
-                directBtn = findDirectDeleteButton();
-                if (directBtn) break;
-                const saveBtn = document.querySelector('#xSaveBu') || document.querySelector('button[aria-label*="Guardar" i]');
-                let moreBtn = null;
-                for (const sel of moreSelectors) {
-                  moreBtn = document.querySelector(sel);
-                  if (moreBtn && moreBtn.offsetParent !== null) break;
+                let directBtn = null;
+                while (Date.now() - startTime < 8000) {
+                  directBtn = findDirectDeleteButton();
+                  if (directBtn) break;
+                  const saveBtn = document.querySelector('#xSaveBu') || document.querySelector('button[aria-label*="Guardar" i]');
+                  let moreBtn = null;
+                  for (const sel of moreSelectors) {
+                    moreBtn = document.querySelector(sel);
+                    if (moreBtn && moreBtn.offsetParent !== null) break;
+                  }
+                  if (saveBtn || moreBtn) break;
+                  await new Promise(r => setTimeout(r, 200));
                 }
-                if (saveBtn || moreBtn) break;
-                await new Promise(r => setTimeout(r, 200));
-              }
 
-              if (directBtn) {
-                directBtn.click();
-              } else {
-                let moreActionsBtn = null;
-                for (const sel of moreSelectors) {
-                  const el = document.querySelector(sel);
-                  if (el && el.offsetParent !== null) {
-                    moreActionsBtn = el;
-                    break;
+                if (directBtn) {
+                  directBtn.click();
+                } else {
+                  let moreActionsBtn = null;
+                  for (const sel of moreSelectors) {
+                    const el = document.querySelector(sel);
+                    if (el && el.offsetParent !== null) {
+                      moreActionsBtn = el;
+                      break;
+                    }
+                  }
+                  if (moreActionsBtn) {
+                    moreActionsBtn.click();
+                    await new Promise(r => setTimeout(r, 350));
+                    const menuItems = Array.from(document.querySelectorAll('[role="menuitem"], .goog-menuitem, .JAPqpe'));
+                    const delItem = menuItems.find(m => {
+                      const txt = (m.textContent || '').trim().toLowerCase();
+                      const aria = (m.getAttribute('aria-label') || '').toLowerCase();
+                      if (txt.includes('formato') || aria.includes('formato')) return false;
+                      return txt === 'eliminar' || txt === 'delete' || txt.startsWith('eliminar') || txt.startsWith('delete') ||
+                             aria === 'eliminar' || aria === 'delete';
+                    });
+                    if (delItem) delItem.click();
                   }
                 }
-                if (moreActionsBtn) {
-                  moreActionsBtn.click();
-                  await new Promise(r => setTimeout(r, 350));
-                  const menuItems = Array.from(document.querySelectorAll('[role="menuitem"], .goog-menuitem, .JAPqpe'));
-                  const delItem = menuItems.find(m => {
-                    const txt = (m.textContent || '').trim().toLowerCase();
-                    const aria = (m.getAttribute('aria-label') || '').toLowerCase();
-                    if (txt.includes('formato') || aria.includes('formato')) return false;
-                    return txt === 'eliminar' || txt === 'delete' || txt.startsWith('eliminar') || txt.startsWith('delete') ||
-                           aria === 'eliminar' || aria === 'delete';
+
+                await new Promise(r => setTimeout(r, 500));
+                const dialog = document.querySelector('[role="dialog"]');
+                if (dialog && dialog.offsetParent !== null) {
+                  const confirmBtn = Array.from(dialog.querySelectorAll('button, [role="button"]')).find(b => {
+                    const txt = (b.textContent || '').trim().toLowerCase();
+                    const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+                    return txt.includes('eliminar') || txt.includes('delete') || txt.includes('aceptar') || txt.includes('ok') ||
+                           aria.includes('eliminar') || aria.includes('delete') || aria.includes('aceptar') || aria.includes('ok');
                   });
-                  if (delItem) delItem.click();
+                  if (confirmBtn) confirmBtn.click();
                 }
-              }
 
-              await new Promise(r => setTimeout(r, 500));
-              const dialog = document.querySelector('[role="dialog"]');
-              if (dialog && dialog.offsetParent !== null) {
-                const confirmBtn = Array.from(dialog.querySelectorAll('button, [role="button"]')).find(b => {
-                  const txt = (b.textContent || '').trim().toLowerCase();
-                  const aria = (b.getAttribute('aria-label') || '').toLowerCase();
-                  return txt.includes('eliminar') || txt.includes('delete') || txt.includes('aceptar') || txt.includes('ok') ||
-                         aria.includes('eliminar') || aria.includes('delete') || aria.includes('aceptar') || aria.includes('ok');
-                });
-                if (confirmBtn) confirmBtn.click();
-              }
+                await new Promise(r => setTimeout(r, 1200));
+              })()`);
 
-              await new Promise(r => setTimeout(r, 1200));
-            })()`);
-
-            await new Promise((resolve) => {
-              let done = false;
-              const finish = () => {
-                if (!done) {
-                  done = true;
-                  resolve(true);
-                }
-              };
-              bgWindow.webContents.once('did-navigate', finish);
-              bgWindow.webContents.once('did-navigate-in-page', finish);
-              setTimeout(finish, 2000);
-            });
+              await new Promise((resolve) => {
+                let done = false;
+                const finish = () => {
+                  if (!done) {
+                    done = true;
+                    resolve(true);
+                  }
+                };
+                bgWindow.webContents.once('did-navigate', finish);
+                bgWindow.webContents.once('did-navigate-in-page', finish);
+                setTimeout(finish, 2000);
+              });
+            } catch (deleteOldErr: any) {
+              logger.warn('BackgroundEventMove', `New event created successfully, but deleting old event ${data.eventId} failed: ${deleteOldErr.message}`);
+              return { success: true, warning: 'Event rescheduled, but could not delete original instance' };
+            }
           }
         }
 
@@ -568,8 +587,9 @@ function setupBackgroundEventCreation(customSession: Session): void {
         return { success: false, error: 'Invalid or missing eventId' };
       }
 
-      logger.info('BackgroundEventDescUpdate', `Syncing description for event ${eventId}`);
-      const targetUrl = `https://calendar.google.com/calendar/u/0/r/eventedit/${eventId}`;
+      const accountIndex = getActiveAccountIndex();
+      logger.info('BackgroundEventDescUpdate', `Syncing description for event ${eventId} on account index ${accountIndex}`);
+      const targetUrl = `https://calendar.google.com/calendar/u/${accountIndex}/r/eventedit/${eventId}`;
 
       const bgWindow = new BrowserWindow({
         show: false,
@@ -716,8 +736,9 @@ function setupBackgroundEventCreation(customSession: Session): void {
           }
         });
 
+        const accountIndex = getActiveAccountIndex();
         try {
-          await bgWindow.loadURL('https://calendar.google.com/calendar/u/0/r/settings/createcalendar');
+          await bgWindow.loadURL(`https://calendar.google.com/calendar/u/${accountIndex}/r/settings/createcalendar`);
 
           await bgWindow.webContents.executeJavaScript(`(async () => {
             const targetName = ${JSON.stringify(calName)};
@@ -882,6 +903,13 @@ export function createMainWindow(): BrowserWindow {
       if (!isGoogle) {
         event.preventDefault();
         shell.openExternal(navigationUrl);
+        return;
+      }
+
+      // Detect Google account sign-out to clean session state [P1-03]
+      if (parsedUrl.pathname.includes('/Logout') || parsedUrl.pathname.includes('/SignOut') || parsedUrl.pathname.includes('/accounts/Logout2')) {
+        logger.info('Auth', 'Detected Google account sign-out navigation. Emitting session reset signal.');
+        mainWindow?.webContents.send('user-logged-out');
       }
     } catch {
       // Ignored

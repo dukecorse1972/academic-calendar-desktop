@@ -5,6 +5,8 @@ import { CreatorModal } from './creatorModal';
 import { AcademicDetailModal } from './detailModal';
 import { OnboardingModal } from './onboardingModal';
 import { safeSetInnerHTML } from '../utils/dom';
+import { getIsolatedItem } from '../utils/storage';
+import { t } from '../../shared/i18n';
 
 export class AcademicPanel {
   private static instance: AcademicPanel | null = null;
@@ -75,15 +77,13 @@ export class AcademicPanel {
     this.updateActiveTabStyles(initialState.activeTab);
     GoogleCalendarAdapter.getInstance().applyTabFilter(initialState.activeTab, true);
 
-    // 9. Trigger first-time onboarding wizard only if neither completed nor subjects already configured
-    if (typeof localStorage !== 'undefined') {
-      const hasCompleted = localStorage.getItem('gcal_academic_onboarding_completed') === 'true';
-      const hasSubjects = Boolean(localStorage.getItem('gcal_academic_subjects'));
-      if (!hasCompleted && !hasSubjects) {
-        setTimeout(() => {
-          OnboardingModal.getInstance().open();
-        }, 700);
-      }
+    // 9. Trigger first-time onboarding wizard only if neither completed nor subjects already configured [P1-02]
+    const hasCompleted = getIsolatedItem('gcal_academic_onboarding_completed') === 'true';
+    const hasSubjects = Boolean(getIsolatedItem('gcal_academic_subjects'));
+    if (!hasCompleted && !hasSubjects) {
+      setTimeout(() => {
+        OnboardingModal.getInstance().open();
+      }, 700);
     }
   }
 
@@ -233,9 +233,9 @@ export class AcademicPanel {
         this.headerTabsContainer,
         `
         <span class="gcal-tab-icon">🎓</span>
-        <button id="gcal-hdr-tab-clases" type="button" class="gcal-hdr-tab-btn" data-tab="CLASES">CLASES</button>
-        <button id="gcal-hdr-tab-entregas" type="button" class="gcal-hdr-tab-btn" data-tab="ENTREGAS_EXAMENES">EXÁMENES Y ENTREGAS</button>
-        <button id="gcal-hdr-tab-todo" type="button" class="gcal-hdr-tab-btn" data-tab="TODO">TODO</button>
+        <button id="gcal-hdr-tab-clases" type="button" class="gcal-hdr-tab-btn" data-tab="CLASES">${t('tab_clases')}</button>
+        <button id="gcal-hdr-tab-entregas" type="button" class="gcal-hdr-tab-btn" data-tab="ENTREGAS_EXAMENES">${t('tab_entregas')}</button>
+        <button id="gcal-hdr-tab-todo" type="button" class="gcal-hdr-tab-btn" data-tab="TODO">${t('tab_todo')}</button>
         `
       );
 
@@ -375,7 +375,7 @@ export class AcademicPanel {
 
       const activeTab = AppState.getInstance().getState().activeTab;
       const hasCustomAcademic = Boolean(chip.querySelector('.custom-academic-container'));
-      const isAcademicText = /examen|exam|entrega|entegra|deadline|assignment|due/i.test(chip.textContent || '');
+      const isAcademicText = /examen|exam|entrega|entegra|pr[aá]ctica|laboratorio|proyecto|control|parcial|quiz|deadline|assignment|due/i.test(chip.textContent || '');
 
       if (activeTab === 'ENTREGAS_EXAMENES' || hasCustomAcademic || isAcademicText) {
         e.preventDefault();
@@ -604,7 +604,7 @@ export class AcademicPanel {
       const customItem = configItem.cloneNode(true) as HTMLElement;
       customItem.id = 'gcal-academic-settings-menuitem';
       customItem.setAttribute('role', 'menuitem');
-      customItem.setAttribute('aria-label', 'Ajustes de Curso (Cursa)');
+      customItem.setAttribute('aria-label', t('course_settings'));
       customItem.setAttribute('tabindex', '-1');
 
       // Strip all native Google actions/delegation attributes to prevent triggering Google Settings
@@ -628,7 +628,7 @@ export class AcademicPanel {
         while ((n = walk.nextNode())) {
           if (n.nodeValue && n.nodeValue.trim().length > 0) {
             if (!textReplaced) {
-              n.nodeValue = '🎓 Ajustes de Curso';
+              n.nodeValue = t('course_settings');
               textReplaced = true;
             } else {
               n.nodeValue = '';
@@ -638,7 +638,7 @@ export class AcademicPanel {
       } catch (_) {}
 
       if (!textReplaced) {
-        customItem.textContent = '🎓 Ajustes de Curso';
+        customItem.textContent = t('course_settings');
       }
 
       // Add right-aligned subtle shortcut hint (Ctrl+,)

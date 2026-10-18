@@ -13,7 +13,7 @@ export interface FormattedAcademicEvent {
 /**
  * Formats an academic event payload into standard Google Calendar event edit parameters and URL.
  */
-export function formatAcademicEvent(payload: AcademicEventPayload): FormattedAcademicEvent {
+export function formatAcademicEvent(payload: AcademicEventPayload, accountIndex: number | string = 0): FormattedAcademicEvent {
   const tag = payload.type === 'EXAMEN' ? '[EXAMEN]' : '[ENTREGA]';
   const fullTitle = `${tag} ${payload.subject.trim()} - ${payload.title.trim()}`;
   const targetCalendar = payload.type === 'EXAMEN' ? TARGET_CALENDARS.EXAMEN : TARGET_CALENDARS.ENTREGA;
@@ -65,7 +65,7 @@ export function formatAcademicEvent(payload: AcademicEventPayload): FormattedAca
     details: description
   });
 
-  const targetUrl = `https://calendar.google.com/calendar/u/0/r/eventedit?${params.toString()}`;
+  const targetUrl = `https://calendar.google.com/calendar/u/${accountIndex}/r/eventedit?${params.toString()}`;
 
   return {
     fullTitle,
@@ -80,6 +80,6 @@ export function formatAcademicEvent(payload: AcademicEventPayload): FormattedAca
 /**
  * Convenience helper returning the target event creation URL for Google Calendar.
  */
-export function formatAcademicEventUrl(payload: AcademicEventPayload): string {
-  return formatAcademicEvent(payload).targetUrl;
+export function formatAcademicEventUrl(payload: AcademicEventPayload, accountIndex: number | string = 0): string {
+  return formatAcademicEvent(payload, accountIndex).targetUrl;
 }

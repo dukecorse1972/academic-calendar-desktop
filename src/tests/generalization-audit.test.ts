@@ -6,6 +6,9 @@ import { t, setLocale, getLocale } from '../shared/i18n';
 import { RESILIENT_SELECTORS } from '../injected/adapter/selectors';
 import { GoogleCalendarAdapter } from '../injected/adapter/GoogleCalendarAdapter';
 import { AppState } from '../injected/state';
+import { formatAcademicEvent, formatAcademicEventUrl } from '../shared/formatters';
+import { getGoogleCalendarUrl } from '../shared/constants';
+import { AcademicEventPayload } from '../shared/types';
 
 describe('14. Account-Isolated Storage & Profile Privacy [P0-03]', () => {
   test('getIsolatedKey namespaces key when user identifier is present', () => {
@@ -178,5 +181,85 @@ describe('19. AppState Calendar Visibility DOM Synchronization [P2-04]', () => {
 
     appState.setCalendarVisibility('Matemáticas', true);
     assert.equal(appState.getState().selectedCalendars['Matemáticas'], true);
+  });
+});
+
+describe('20. Dynamic Google Account Indexing & Generalist URLs [P0-01]', () => {
+  const samplePayload: AcademicEventPayload = {
+    type: 'EXAMEN',
+    subject: 'Sistemas Distribuidos',
+    title: 'Parcial 1',
+    date: '2026-11-15',
+    startTime: '10:00',
+    endTime: '12:00'
+  };
+
+  test('formatAcademicEvent defaults to account index 0 when omitted', () => {
+    const result = formatAcademicEvent(samplePayload);
+    assert.ok(result.targetUrl.startsWith('https://calendar.google.com/calendar/u/0/r/eventedit?'));
+  });
+
+  test('formatAcademicEvent respects dynamic account index (e.g. /u/1/, /u/2/)', () => {
+    const resultU1 = formatAcademicEvent(samplePayload, 1);
+    assert.ok(resultU1.targetUrl.startsWith('https://calendar.google.com/calendar/u/1/r/eventedit?'));
+
+    const resultU2 = formatAcademicEvent(samplePayload, '2');
+    assert.ok(resultU2.targetUrl.startsWith('https://calendar.google.com/calendar/u/2/r/eventedit?'));
+  });
+
+  test('formatAcademicEventUrl respects dynamic account index', () => {
+    const urlU3 = formatAcademicEventUrl(samplePayload, 3);
+    assert.ok(urlU3.startsWith('https://calendar.google.com/calendar/u/3/r/eventedit?'));
+  });
+
+  test('getGoogleCalendarUrl returns appropriate base URL for any account index', () => {
+    assert.equal(getGoogleCalendarUrl(), 'https://calendar.google.com/calendar/u/0/r');
+    assert.equal(getGoogleCalendarUrl(1), 'https://calendar.google.com/calendar/u/1/r');
+    assert.equal(getGoogleCalendarUrl('5'), 'https://calendar.google.com/calendar/u/5/r');
+  });
+});
+
+describe('21. Production Generalization & Creator Independence [P0/P1/P2]', () => {
+  const adapter = GoogleCalendarAdapter.getInstance();
+
+  test('shouldShowOtherCalendars defaults to true to preserve university external subscriptions', () => {
+    // When no explicit preference is set, other calendars MUST be visible
+    removeIsolatedItem('gcal_show_other_calendars');
+    assert.equal(adapter.shouldShowOtherCalendars(), true);
+
+    // Can still be explicitly hidden if the user requests it
+    setIsolatedItem('gcal_show_other_calendars', 'false');
+    assert.equal(adapter.shouldShowOtherCalendars(), false);
+
+    // Reset back
+    setIsolatedItem('gcal_show_other_calendars', 'true');
+    assert.equal(adapter.shouldShowOtherCalendars(), true);
+  });
+
+  test('Academic synonyms (práctica, laboratorio, proyecto, control, parcial, quiz) are recognized as academic', () => {
+    assert.ok(adapter.isAcademic('Práctica 3 de Redes'));
+    assert.ok(adapter.isAcademic('Laboratorio de Física'));
+    assert.ok(adapter.isAcademic('Entrega Proyecto Final'));
+    assert.ok(adapter.isAcademic('Primer Parcial'));
+    assert.ok(adapter.isAcademic('Quiz 1'));
+    assert.ok(adapter.isAcademic('Control de lectura'));
+    assert.ok(adapter.isAcademic('Examen Final'));
+  });
+
+  test('Onboarding completed state in isolated storage prevents infinite wizard loops', () => {
+    // When marked as completed in isolated storage
+    setIsolatedItem('gcal_academic_onboarding_completed', 'true');
+    assert.equal(getIsolatedItem('gcal_academic_onboarding_completed'), 'true');
+  });
+
+  test('dateParsers and calculateDuration properly format in English when locale is switched', () => {
+    setLocale('en');
+    assert.equal(calculateDuration('09:00', '11:00'), '2 hours');
+    assert.equal(calculateDuration('10:00', '11:00'), '1 hour');
+    assert.equal(calculateDuration('10:00', '10:30'), '30 min');
+
+    const res = parseAcademicDateString('Final exam on December 15, 2026', 10, 0);
+    assert.ok(res.dateStr.includes('December 15, 2026'));
+    setLocale('es'); // Reset
   });
 });

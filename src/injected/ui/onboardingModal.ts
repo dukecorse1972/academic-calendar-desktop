@@ -16,7 +16,8 @@ export class OnboardingModal {
   private focusTrapCleanup: (() => void) | null = null;
   private isEditMode: boolean = false;
   private hideBirthdays: boolean = true;
-  private showOtherCalendars: boolean = false;
+  private showOtherCalendars: boolean = true;
+  private ensureAcademicCalendars: boolean = false;
   private subjects: SubjectConfig[] = [
     { name: 'Matemáticas', color: '#98D5E8' },
     { name: 'Física', color: '#A1D0CA' },
@@ -53,7 +54,9 @@ export class OnboardingModal {
       const storedBirthdays = getIsolatedItem('gcal_hide_birthdays');
       this.hideBirthdays = storedBirthdays === null ? true : storedBirthdays !== 'false';
       const storedOtherCalendars = getIsolatedItem('gcal_show_other_calendars');
-      this.showOtherCalendars = storedOtherCalendars === 'true';
+      this.showOtherCalendars = storedOtherCalendars === null ? true : storedOtherCalendars !== 'false';
+      const storedEnsureCals = getIsolatedItem('gcal_academic_calendars_ensured');
+      this.ensureAcademicCalendars = storedEnsureCals === 'true';
     } catch (_) {}
   }
 
@@ -295,6 +298,10 @@ export class OnboardingModal {
             <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--gcal-text, #1f1f1f); cursor: pointer;">
               <input type="checkbox" id="gcal-pref-show-other-calendars" ${this.showOtherCalendars ? 'checked' : ''} style="cursor: pointer; accent-color: var(--gcal-accent, #1a73e8);" />
               <span>Mostrar sección 'Otros calendarios' (suscripciones externas, Moodle o festivos)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--gcal-text, #1f1f1f); cursor: pointer;">
+              <input type="checkbox" id="gcal-pref-ensure-calendars" ${this.ensureAcademicCalendars ? 'checked' : ''} style="cursor: pointer; accent-color: var(--gcal-accent, #1a73e8);" />
+              <span>Crear calendarios dedicados 'Exámenes' y 'Entregas' en Google Calendar (opcional)</span>
             </label>
           </div>
         </div>
@@ -569,6 +576,10 @@ export class OnboardingModal {
     if (showOtherCalCheckbox) {
       this.showOtherCalendars = showOtherCalCheckbox.checked;
     }
+    const ensureCalCheckbox = this.modalOverlay.querySelector<HTMLInputElement>('#gcal-pref-ensure-calendars');
+    if (ensureCalCheckbox) {
+      this.ensureAcademicCalendars = ensureCalCheckbox.checked;
+    }
   }
 
   private async handleSubmit(): Promise<void> {
@@ -594,6 +605,7 @@ export class OnboardingModal {
       setIsolatedItem('gcal_academic_subjects', JSON.stringify(this.subjects));
       setIsolatedItem('gcal_hide_birthdays', String(this.hideBirthdays));
       setIsolatedItem('gcal_show_other_calendars', String(this.showOtherCalendars));
+      setIsolatedItem('gcal_academic_calendars_ensured', String(this.ensureAcademicCalendars));
 
       // Save color mapping
       const colorMap: Record<string, string> = {};
@@ -603,14 +615,11 @@ export class OnboardingModal {
       setIsolatedItem('gcal_subject_colors', JSON.stringify(colorMap));
     } catch (_) {}
 
-    // 2. Request background creation of secondary calendars in Google Calendar for exams, submissions and subjects [P0-01]
-    const subjectNames = this.subjects.map((s) => s.name.trim()).filter(Boolean);
-    const calendarsToEnsure = Array.from(new Set(['Exámenes', 'Entregas', ...subjectNames]));
+    // 2. Request background creation of base secondary calendars only if opted in (never create calendars for each subject tag)
     const desktopApi = (typeof window !== 'undefined' ? (window as any).gcalDesktopAPI : null);
-    if (desktopApi && typeof desktopApi.ensureAcademicCalendarsBackground === 'function') {
+    if (this.ensureAcademicCalendars && desktopApi && typeof desktopApi.ensureAcademicCalendarsBackground === 'function') {
       try {
-        desktopApi.ensureAcademicCalendarsBackground(calendarsToEnsure);
-        setIsolatedItem('gcal_academic_calendars_ensured', 'true');
+        desktopApi.ensureAcademicCalendarsBackground(['Exámenes', 'Entregas']);
       } catch (_) {}
     }
 

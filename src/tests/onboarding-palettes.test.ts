@@ -139,15 +139,15 @@ describe('11. Dynamic Academic Subjects & Resilient Calendar Integration', () =>
       setItem: (k: string, v: string) => { storage[k] = v; }
     };
 
-    // By default, birthdays are hidden and other calendars are hidden
+    // By default, birthdays are hidden and other calendars are preserved/shown by default [P0-03]
     assert.equal(adapter.shouldHideBirthdays(), true, 'Birthdays must be hidden by default');
-    assert.equal(adapter.shouldShowOtherCalendars(), false, 'Other calendars must be hidden by default');
+    assert.equal(adapter.shouldShowOtherCalendars(), true, 'Other calendars must be shown by default');
 
     // When explicitly toggled by user in settings (Ctrl+,)
     storage['gcal_hide_birthdays'] = 'false';
-    storage['gcal_show_other_calendars'] = 'true';
+    storage['gcal_show_other_calendars'] = 'false';
     assert.equal(adapter.shouldHideBirthdays(), false, 'Birthdays should be visible when opted in');
-    assert.equal(adapter.shouldShowOtherCalendars(), true, 'Other calendars should be visible when opted in');
+    assert.equal(adapter.shouldShowOtherCalendars(), false, 'Other calendars should be hidden when opted out');
   });
 
   test('Dynamic subject resolution does not override custom subjects with hardcoded keywords', () => {

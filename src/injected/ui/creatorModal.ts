@@ -5,7 +5,8 @@ import { GoogleCalendarAdapter } from '../adapter/GoogleCalendarAdapter';
 import { OnboardingModal } from './onboardingModal';
 import { safeSetInnerHTML, escapeHtml, setupFocusTrap } from '../utils/dom';
 import { getIsolatedItem, setIsolatedItem } from '../utils/storage';
-import { DAY_NAMES_ES, MONTH_NAMES_ES, calculateDuration, toISODateString } from '../utils/dateParsers';
+import { DAY_NAMES_ES, MONTH_NAMES_ES, DAY_NAMES_EN, MONTH_NAMES_EN, calculateDuration, toISODateString } from '../utils/dateParsers';
+import { t, getLocale } from '../../shared/i18n';
 
 export class CreatorModal {
   private static instance: CreatorModal | null = null;
@@ -81,11 +82,12 @@ export class CreatorModal {
   }
 
   private formatDateDisplay(date: Date): string {
-    const dayName = DAY_NAMES_ES[date.getDay()];
+    const isEn = getLocale() === 'en';
+    const dayName = isEn ? DAY_NAMES_EN[date.getDay()] : DAY_NAMES_ES[date.getDay()];
     const dayNum = date.getDate();
-    const monthName = MONTH_NAMES_ES[date.getMonth()];
+    const monthName = isEn ? MONTH_NAMES_EN[date.getMonth()] : MONTH_NAMES_ES[date.getMonth()];
     const year = date.getFullYear();
-    return `${dayName}, ${dayNum} de ${monthName} de ${year}`;
+    return isEn ? `${dayName}, ${monthName} ${dayNum}, ${year}` : `${dayName}, ${dayNum} de ${monthName} de ${year}`;
   }
 
   private toISODate(date: Date): string {
@@ -594,7 +596,7 @@ export class CreatorModal {
             font-size: 13px;
             cursor: pointer;
             transition: background 0.15s ease;
-          " onmouseover="this.style.background='var(--gcal-surface-hover, #f1f3f4)'" onmouseout="this.style.background='transparent'">Cancelar</button>
+          " onmouseover="this.style.background='var(--gcal-surface-hover, #f1f3f4)'" onmouseout="this.style.background='transparent'">${t('btn_cancel')}</button>
 
           <button id="gcal-creator-submit" type="button" style="
             padding: 9px 24px;
@@ -611,7 +613,7 @@ export class CreatorModal {
             box-shadow: 0 3px 8px rgba(26, 115, 232, 0.35);
             transition: all 0.15s ease;
           " onmouseover="this.style.background='#1557b0'; this.style.boxShadow='0 4px 12px rgba(26, 115, 232, 0.45)'" onmouseout="this.style.background='var(--gcal-accent, #1a73e8)'; this.style.boxShadow='0 3px 8px rgba(26, 115, 232, 0.35)'">
-            <span>Crear Evento</span>
+            <span>${t('btn_create')}</span>
           </button>
         </div>
       </div>
@@ -632,7 +634,9 @@ export class CreatorModal {
 
     const year = this.viewDate.getFullYear();
     const month = this.viewDate.getMonth();
-    title.textContent = `${MONTH_NAMES_ES[month]} ${year}`;
+    const isEn = getLocale() === 'en';
+    const monthName = isEn ? MONTH_NAMES_EN[month] : MONTH_NAMES_ES[month];
+    title.textContent = `${monthName} ${year}`;
 
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -992,7 +996,7 @@ export class CreatorModal {
     appState.setSubmitting(true);
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.6';
-    submitBtn.innerText = 'Creando...';
+    submitBtn.innerText = t('btn_creating');
     if (errorEl) errorEl.style.display = 'none';
 
     try {
@@ -1043,7 +1047,7 @@ export class CreatorModal {
       appState.setSubmitting(false);
       submitBtn.disabled = false;
       submitBtn.style.opacity = '1';
-      submitBtn.innerText = 'Crear Evento';
+      submitBtn.innerText = t('btn_create');
     }
   }
 
