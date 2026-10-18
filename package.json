@@ -1,8 +1,8 @@
 {
-  "name": "academic-calendar-desktop",
-  "productName": "AcademiCal Desktop",
+  "name": "cursa-desktop",
+  "productName": "Cursa",
   "version": "1.0.0",
-  "description": "Desktop companion and productivity workstation for Google Calendar on Windows",
+  "description": "Desktop companion and academic productivity workstation for Google Calendar on Windows",
   "main": "dist/main/index.js",
   "scripts": {
     "build:ts": "tsc",
@@ -18,8 +18,8 @@
     "dist": "npm run build && electron-builder"
   },
   "build": {
-    "appId": "com.academic.calendar.desktop",
-    "productName": "AcademiCal Desktop",
+    "appId": "com.cursa.desktop",
+    "productName": "Cursa",
     "directories": {
       "output": "release"
     },
@@ -45,14 +45,14 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "AcademiCal Desktop",
+      "shortcutName": "Cursa",
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico",
       "installerSidebar": "assets/installer-sidebar.bmp",
       "uninstallerSidebar": "assets/installer-sidebar.bmp",
       "installerHeader": "assets/installer-header.bmp",
-      "uninstallDisplayName": "AcademiCal Desktop",
+      "uninstallDisplayName": "Cursa Desktop",
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "runAfterFinish": true
     }

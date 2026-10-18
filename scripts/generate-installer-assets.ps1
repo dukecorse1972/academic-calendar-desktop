@@ -46,11 +46,11 @@ $centerFormat = New-Object System.Drawing.StringFormat
 $centerFormat.Alignment = [System.Drawing.StringAlignment]::Center
 $centerFormat.LineAlignment = [System.Drawing.StringAlignment]::Center
 
-# App Title: AcademiCal
-$titleFont = New-Object System.Drawing.Font("Segoe UI", 15, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
+# App Title: Cursa
+$titleFont = New-Object System.Drawing.Font("Segoe UI", 16, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
 $whiteBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
 $titleRect = New-Object System.Drawing.RectangleF(0, 126, $sidebarWidth, 24)
-$g.DrawString("AcademiCal", $titleFont, $whiteBrush, $titleRect, $centerFormat)
+$g.DrawString("Cursa", $titleFont, $whiteBrush, $titleRect, $centerFormat)
 
 # Subtitle: DESKTOP
 $subFont = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)

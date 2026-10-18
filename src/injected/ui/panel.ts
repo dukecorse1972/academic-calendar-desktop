@@ -604,7 +604,7 @@ export class AcademicPanel {
       const customItem = configItem.cloneNode(true) as HTMLElement;
       customItem.id = 'gcal-academic-settings-menuitem';
       customItem.setAttribute('role', 'menuitem');
-      customItem.setAttribute('aria-label', 'Ajustes de Curso (AcademiCal)');
+      customItem.setAttribute('aria-label', 'Ajustes de Curso (Cursa)');
       customItem.setAttribute('tabindex', '-1');
 
       // Strip all native Google actions/delegation attributes to prevent triggering Google Settings
@@ -673,7 +673,7 @@ export class AcademicPanel {
           }
           window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
 
-          // Open AcademiCal settings in edit mode
+          // Open Cursa settings in edit mode
           OnboardingModal.getInstance().open(true);
         }
       };

@@ -123,7 +123,7 @@ app.whenReady().then(async () => {
     show: true,
     width: 1400,
     height: 900,
-    title: 'AcademiCal Desktop — Google Calendar',
+    title: 'Cursa — Google Calendar',
     icon: path.join(__dirname, '../assets/icon.ico'),
     autoHideMenuBar: true,
     backgroundColor: '#ffffff',
@@ -137,7 +137,7 @@ app.whenReady().then(async () => {
 
   await displayWin.loadURL('https://calendar.google.com/calendar/u/0/r/week/2030/10/21');
 
-  // Wait for Google Calendar & AcademiCal Desktop custom layer to fully enhance chips
+  // Wait for Google Calendar & Cursa custom layer to fully enhance chips
   console.log('[Showcase] Waiting for calendar grid and custom chips to settle...');
   await new Promise(r => setTimeout(r, 6000));
 

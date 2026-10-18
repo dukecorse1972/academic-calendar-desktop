@@ -571,7 +571,7 @@ export function createMainWindow(): BrowserWindow {
     height: 850,
     minWidth: 960,
     minHeight: 600,
-    title: 'AcademiCal Desktop — Google Calendar',
+    title: 'Cursa — Google Calendar',
     icon: path.join(__dirname, '../../assets/icon.ico'),
     autoHideMenuBar: true,
     backgroundColor: '#ffffff',

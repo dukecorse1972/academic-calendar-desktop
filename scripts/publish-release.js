@@ -45,20 +45,20 @@ async function main() {
     console.log(`Found existing release: ${release.name} (id: ${release.id})`);
   } else if (getRelRes.status === 404) {
     console.log(`Creating release for tag ${tag}...`);
-    const releaseBody = `## 🎓 AcademiCal Desktop v1.0.0 — Primera Versión Oficial
+    const releaseBody = `## 🎓 Cursa v1.0.0 — Primera Versión Oficial
 
-¡Bienvenido a la primera versión de **AcademiCal Desktop**, el entorno de productividad académica sobre Google Calendar para Windows!
+¡Bienvenido a la primera versión de **Cursa**, el entorno de productividad académica sobre Google Calendar para Windows!
 
 ### 📦 Archivos Disponibles para Descarga
 
-1. **\`AcademiCal Desktop-Setup-1.0.0.exe\` (Recomendado)**:
+1. **\`Cursa-Setup-1.0.0.exe\` (Recomendado)**:
    * Instalador interactivo oficial para Windows 10 y 11 (64-bit).
    * **Cero permisos de administrador requeridos** (\`perMachine: false\`, instalado en \`%LOCALAPPDATA%\`).
    * Asistente personalizado con identidad visual académica.
    * Crea accesos directos automáticos en el **Escritorio** y en el **Menú de Inicio**.
    * Se inicia inmediatamente tras la instalación y soporta desinstalación limpia desde la configuración de Windows.
 
-2. **\`AcademiCal-Desktop-v1.0.0-windows-x64.zip\` (Portable)**:
+2. **\`Cursa-v1.0.0-windows-x64.zip\` (Portable)**:
    * Versión portable descomprimible directa sin necesidad de instalación.
 
 ---
@@ -67,14 +67,14 @@ async function main() {
 * **Contextos Académicos**: Pestañas de filtrado dinámico para **CLASES**, **ENTREGAS Y EXÁMENES** y **TODO**.
 * **Diseño Visual Badge Pro**: Resalte con contrastes matemáticos HSL y borde dorado para exámenes.
 * **Integración Segura**: Aislamiento estricto de contexto con Chromium Sandbox y partición de sesión segura.
-* **Suite de Pruebas**: 42 pruebas unitarias e integradas verificadas.`;
+* **Suite de Pruebas**: 58 pruebas automatizadas verificadas.`;
 
     const createRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tag_name: tag,
-        name: 'AcademiCal Desktop v1.0.0 — Official Windows Release',
+        name: 'Cursa v1.0.0 — Official Windows Release',
         body: releaseBody,
         draft: false,
         prerelease: false
@@ -98,13 +98,13 @@ async function main() {
   const releaseDir = path.join(__dirname, '..', 'release');
   const filesToUpload = [
     {
-      fileName: 'AcademiCal Desktop-Setup-1.0.0.exe',
-      filePath: path.join(releaseDir, 'AcademiCal Desktop-Setup-1.0.0.exe'),
+      fileName: 'Cursa-Setup-1.0.0.exe',
+      filePath: path.join(releaseDir, 'Cursa-Setup-1.0.0.exe'),
       contentType: 'application/octet-stream'
     },
     {
-      fileName: 'AcademiCal-Desktop-v1.0.0-windows-x64.zip',
-      filePath: path.join(releaseDir, 'AcademiCal-Desktop-v1.0.0-windows-x64.zip'),
+      fileName: 'Cursa-v1.0.0-windows-x64.zip',
+      filePath: path.join(releaseDir, 'Cursa-v1.0.0-windows-x64.zip'),
       contentType: 'application/zip'
     }
   ];

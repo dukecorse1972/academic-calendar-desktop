@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="assets/icon.png" width="88" height="88" alt="AcademiCal Desktop Logo" />
+  <img src="assets/icon.png" width="96" height="96" alt="Cursa Logo" />
 </p>
 
-<h1 align="center">AcademiCal Desktop</h1>
+<h1 align="center">Cursa</h1>
 
 <p align="center">
   <strong>Tu Google Calendar universitario, sin distracciones y con superpoderes académicos.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal.Desktop-Setup-1.0.0.exe"><img src="https://img.shields.io/badge/Descargar-Instalador_.exe-2563eb?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Instalador Windows" /></a>
-  <a href="https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal-Desktop-v1.0.0-windows-x64.zip"><img src="https://img.shields.io/badge/Portable-.zip_(x64)-475569?style=for-the-badge&logo=zip&logoColor=white" alt="Descargar Portable" /></a>
+  <a href="https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-Setup-1.0.0.exe"><img src="https://img.shields.io/badge/Descargar-Instalador_.exe-2563eb?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Instalador Windows" /></a>
+  <a href="https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-v1.0.0-windows-x64.zip"><img src="https://img.shields.io/badge/Portable-.zip_(x64)-475569?style=for-the-badge&logo=zip&logoColor=white" alt="Descargar Portable" /></a>
   <a href="RELEASE_NOTES_v1.0.0.md"><img src="https://img.shields.io/badge/Release-v1.0.0-059669?style=for-the-badge&logo=github&logoColor=white" alt="Notas de Versión" /></a>
 </p>
 
@@ -24,14 +24,14 @@
 
 ---
 
-## 💡 ¿Qué es AcademiCal Desktop?
+## 💡 ¿Qué es Cursa?
 
 **Google Calendar** es la mejor herramienta para sincronizar eventos, pero no fue diseñado para la vida universitaria:
 - Mezcla tus clases con cumpleaños, recordatorios personales y festivos.
 - Los colores por defecto no permiten diferenciar un examen crítico de una simple práctica.
 - Saturación visual constante que dificulta concentrarse en lo importante de la semana.
 
-**AcademiCal Desktop** es una aplicación de escritorio nativa para **Windows** que envuelve Google Calendar con una capa quirúrgica de productividad para estudiantes de ingeniería, universidad y bachillerato:
+**Cursa** es una aplicación de escritorio nativa para **Windows** que envuelve Google Calendar con una capa quirúrgica de productividad para estudiantes de ingeniería, universidad y bachillerato:
 - **0 latencia**: Los filtros y pestañas se aplican al nivel del motor de renderizado CSS.
 - **100% oficial y privado**: Tu cuenta se sincroniza directamente con los servidores de Google. Cero servidores intermediarios ni telemetría.
 - **Flujo de estudio real**: Separa tus clases lectivas de tus exámenes y fechas límite con una sola pulsación.
@@ -41,14 +41,14 @@
 ## 🖥️ Interfaz Integrada
 
 <p align="center">
-  <img src="assets/app-showcase.png" width="100%" alt="Captura real de AcademiCal Desktop en Google Calendar con modo oscuro y chips Badge Pro" />
+  <img src="assets/app-showcase.png" width="100%" alt="Captura real de Cursa en Google Calendar con modo oscuro y chips Badge Pro" />
 </p>
 
-La capa de **AcademiCal Desktop** no sobrecarga la interfaz de Google Calendar; se integra directamente con sus componentes oficiales en 3 puntos clave:
+La capa de **Cursa** no sobrecarga la interfaz de Google Calendar; se integra directamente con sus componentes oficiales en 3 puntos clave:
 
 * **Cápsula de Contexto (`1`, `2`, `3`)**: Centrada en la cabecera, conmuta en 0ms entre tus clases lectivas, tus fechas críticas de exámenes/entregas y la vista global.
 * **Ajustes Mimetizados en el Engranaje (`⚙️` o `Ctrl+,`)**: Ubicación natural en el menú desplegable oficial de Google, sin desajustar el buscador ni desplazar los iconos de usuario.
-* **Chips Semanales "Badge Pro"**: Reconocimiento visual instantáneo entre **Exámenes** (bloque sólido de alto impacto), **Entregas** (tonos pastel HSL suaves) y tareas completadas (**✓ HECHA**).
+* **Chips Semanales "Badge Pro"**: Reconocimiento visual instantáneo entre **Exámenes** (bloque sólido de alto impacto con borde dorado), **Entregas** (tonos pastel HSL suaves) y tareas completadas (**✓ HECHA**).
 
 ---
 
@@ -106,13 +106,13 @@ Selección en 1 clic entre 4 paletas estéticas curadas de papelería universita
 ## 🚀 Instalación y Puesta en Marcha
 
 ### Opción 1: Instalador Oficial (.exe) — Recomendado
-1. Descarga [`AcademiCal Desktop-Setup-1.0.0.exe`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal.Desktop-Setup-1.0.0.exe).
-2. Ejecuta el asistente. Se instala en `%LOCALAPPDATA%\Programs\AcademiCal Desktop` sin requerir permisos de administrador ni ventanas UAC.
+1. Descarga [`Cursa-Setup-1.0.0.exe`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-Setup-1.0.0.exe).
+2. Ejecuta el asistente. Se instala en `%LOCALAPPDATA%\Programs\Cursa` sin requerir permisos de administrador ni ventanas UAC.
 3. Crea accesos directos en el **Escritorio** y en el **Menú de Inicio** automáticamente.
 
 ### Opción 2: Versión Portable (.zip)
-1. Descarga [`AcademiCal-Desktop-v1.0.0-windows-x64.zip`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal-Desktop-v1.0.0-windows-x64.zip).
-2. Descomprime y ejecuta `AcademiCal Desktop.exe`. Ideal para llevar en USB sin tocar el sistema.
+1. Descarga [`Cursa-v1.0.0-windows-x64.zip`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-v1.0.0-windows-x64.zip).
+2. Descomprime y ejecuta `Cursa.exe`. Ideal para llevar en USB sin tocar el sistema.
 
 ---
 

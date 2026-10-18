@@ -33,7 +33,7 @@
     <line x1="48" y1="0" x2="58" y2="10" stroke="#5f6368" stroke-width="1.2" />
     <line x1="58" y1="0" x2="48" y2="10" stroke="#5f6368" stroke-width="1.2" />
   </g>
-  <text x="42" y="38" font-size="12" fill="#5f6368" font-weight="500">🎓 AcademiCal Desktop — Google Calendar</text>
+  <text x="42" y="38" font-size="12" fill="#5f6368" font-weight="500">🎓 Cursa — Google Calendar</text>
 
   <!-- GOOGLE CALENDAR MAIN HEADER (Y: 54 to 118) -->
   <g transform="translate(20, 54)">
@@ -236,7 +236,7 @@
       <text x="16" y="21" font-size="13" fill="#3c4043">Configuración</text>
     </g>
 
-    <!-- CUSTOM ITEM 2: 🎓 AJUSTES DE CURSO (HIGHLIGHTED ACADEMICAL FEATURE) -->
+    <!-- CUSTOM ITEM 2: 🎓 AJUSTES DE CURSO (HIGHLIGHTED CURSA FEATURE) -->
     <g transform="translate(0, 42)">
       <rect x="4" y="0" width="212" height="36" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="0.8" />
       <text x="14" y="23" font-size="13.5" font-weight="700" fill="#1a73e8">🎓 Ajustes de Curso</text>

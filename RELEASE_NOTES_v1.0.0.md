@@ -1,8 +1,8 @@
-# 🎓 AcademiCal Desktop — v1.0.0 Official Release
+# 🎓 Cursa — v1.0.0 Official Release
 
 > **The High-Performance Academic Companion and Productivity Workstation for Google Calendar on Windows.**
 
-We are thrilled to announce the official **v1.0.0** release of **AcademiCal Desktop**! Designed by a Computer Engineering student initially for personal university course organization, AcademiCal Desktop has evolved into a production-grade, privacy-first, generalist productivity workstation for university students, educators, and lifelong learners.
+We are thrilled to announce the official **v1.0.0** release of **Cursa**! Designed by a Computer Engineering student initially for personal university course organization, Cursa has evolved into a production-grade, privacy-first, generalist productivity workstation for university students, educators, and lifelong learners.
 
 ---
 
@@ -10,8 +10,8 @@ We are thrilled to announce the official **v1.0.0** release of **AcademiCal Desk
 
 | Asset | Platform | Description | Size |
 |---|---|---|---|
-| 🚀 [**AcademiCal Desktop-Setup-1.0.0.exe**](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal.Desktop-Setup-1.0.0.exe) | Windows 10/11 x64 | **Official NSIS Installer (Recommended)**: Per-user install, zero UAC elevation, desktop & start menu shortcuts. | ~80 MB |
-| 📦 [**AcademiCal-Desktop-v1.0.0-windows-x64.zip**](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal-Desktop-v1.0.0-windows-x64.zip) | Windows 10/11 x64 | **Portable Distribution**: Unzip anywhere, run on USB drives without touching registry. | ~115 MB |
+| 🚀 [**Cursa-Setup-1.0.0.exe**](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-Setup-1.0.0.exe) | Windows 10/11 x64 | **Official NSIS Installer (Recommended)**: Per-user install, zero UAC elevation, desktop & start menu shortcuts. | ~80 MB |
+| 📦 [**Cursa-v1.0.0-windows-x64.zip**](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-v1.0.0-windows-x64.zip) | Windows 10/11 x64 | **Portable Distribution**: Unzip anywhere, run on USB drives without touching registry. | ~115 MB |
 | 📝 [**Source Code (zip)**](https://github.com/dukecorse1972/academic-calendar-desktop/archive/refs/tags/v1.0.0.zip) | Multi-platform | Full TypeScript codebase, automated test suite, and build scripts. | — |
 
 ---

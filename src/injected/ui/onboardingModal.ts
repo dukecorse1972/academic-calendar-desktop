@@ -147,7 +147,7 @@ export class OnboardingModal {
               letter-spacing: 0.5px;
               margin-bottom: 8px;
             ">
-              <span>🎓</span> <span>${this.isEditMode ? '⚙️ AJUSTES DE CURSO' : 'BIENVENIDO A ACADEMICAL'}</span>
+              <span>🎓</span> <span>${this.isEditMode ? '⚙️ AJUSTES DE CURSO' : 'BIENVENIDO A CURSA'}</span>
             </div>
             <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: var(--gcal-text, #1f1f1f);">
               ${this.isEditMode ? 'Personalizar Asignaturas y Paleta' : 'Configuración Inicial de tu Curso'}
@@ -304,7 +304,7 @@ export class OnboardingModal {
             gap: 8px;
             box-shadow: 0 3px 8px rgba(26, 115, 232, 0.35);
           ">
-            <span>${this.isEditMode ? 'Guardar Cambios ✓' : 'Comenzar con AcademiCal ➔'}</span>
+            <span>${this.isEditMode ? 'Guardar Cambios ✓' : 'Comenzar con Cursa ➔'}</span>
           </button>
         </div>
       </div>

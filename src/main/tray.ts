@@ -20,11 +20,11 @@ export function setupTray(mainWindow: BrowserWindow): Tray {
 
   const iconPath = getTrayIconPath();
   tray = new Tray(iconPath);
-  tray.setToolTip('AcademiCal Desktop — Google Calendar');
+  tray.setToolTip('Cursa — Google Calendar');
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Mostrar AcademiCal Desktop',
+      label: 'Mostrar Cursa',
       click: () => {
         if (!mainWindow.isVisible()) {
           mainWindow.show();

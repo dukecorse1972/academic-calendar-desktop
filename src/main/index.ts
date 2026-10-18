@@ -12,8 +12,8 @@ const persistentUserData = fs.existsSync(legacyUserData) ? legacyUserData : newU
 app.setPath('userData', persistentUserData);
 
 // Set application identity for Windows Start Menu & Taskbar
-app.setName('AcademiCal Desktop');
-app.setAppUserModelId('com.academic.calendar.desktop');
+app.setName('Cursa');
+app.setAppUserModelId('com.cursa.desktop');
 
 // Set standard desktop User-Agent globally
 app.userAgentFallback = DESKTOP_USER_AGENT;

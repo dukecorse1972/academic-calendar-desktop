@@ -175,7 +175,7 @@ function generate() {
   const assetsDir = path.resolve(__dirname, '..', 'assets');
   if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
 
-  console.log('[Assets] Generating original AcademiCal branding assets...');
+  console.log('[Assets] Generating original Cursa branding assets...');
 
   const png256 = createPng(256);
   const png512 = createPng(512);
