@@ -41,7 +41,7 @@
 ## 🖥️ Interfaz Integrada
 
 <p align="center">
-  <img src="assets/interface-preview.svg" width="100%" alt="Vista previa de la interfaz de AcademiCal Desktop integrada en Google Calendar" />
+  <img src="assets/app-showcase.png" width="100%" alt="Captura real de AcademiCal Desktop en Google Calendar con modo oscuro y chips Badge Pro" />
 </p>
 
 La capa de **AcademiCal Desktop** no sobrecarga la interfaz de Google Calendar; se integra directamente con sus componentes oficiales en 3 puntos clave:
