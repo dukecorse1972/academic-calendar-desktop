@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { AcademicEventPayload } from '../shared/types';
 import { TARGET_CALENDARS } from '../shared/constants';
 import { formatAcademicEventUrl } from '../shared/formatters';
+import { setLocale } from '../shared/i18n';
 
 describe('4. Academic Event Formatting and Google Calendar URL Construction', () => {
 
@@ -134,6 +135,7 @@ describe('5. Subject Colors & Option 1 HSL Adaptation', () => {
 });
 
 describe('6. Academic Event Extended View (Detail Modal)', () => {
+  setLocale('es');
   const { AcademicDetailModal } = require('../injected/ui/detailModal');
   const modal = AcademicDetailModal.getInstance();
 

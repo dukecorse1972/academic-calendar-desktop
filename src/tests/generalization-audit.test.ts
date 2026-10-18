@@ -45,6 +45,7 @@ describe('14. Account-Isolated Storage & Profile Privacy [P0-03]', () => {
 });
 
 describe('15. Resilient Multilingual Date Parsers [P3-01]', () => {
+  setLocale('es');
   test('Parses Spanish academic date string correctly', () => {
     const res = parseAcademicDateString('Evento el 20 de noviembre de 2026 a las 10:00');
     assert.equal(res.matchedDay, 20);

@@ -17,13 +17,23 @@ export function getLocale(): Locale {
 
 export function getActiveLocale(): Locale {
   if (explicitLocale) return explicitLocale;
-  if (typeof navigator !== 'undefined') {
-    const lang = (navigator.language || '').toLowerCase();
-    if (lang.startsWith('en')) return 'en';
+  // If running in pure Node.js runtime (unit tests or background workers), default deterministically to 'es'
+  if (typeof process !== 'undefined' && process.versions?.node && !process.versions?.electron) {
+    if (typeof document !== 'undefined' && document.documentElement?.lang) {
+      const htmlLang = (document.documentElement.lang || '').toLowerCase();
+      if (htmlLang.startsWith('en')) return 'en';
+      if (htmlLang.startsWith('es')) return 'es';
+    }
+    return 'es';
   }
-  if (typeof document !== 'undefined' && document.documentElement) {
+  if (typeof document !== 'undefined' && document.documentElement?.lang) {
     const htmlLang = (document.documentElement.lang || '').toLowerCase();
     if (htmlLang.startsWith('en')) return 'en';
+    if (htmlLang.startsWith('es')) return 'es';
+  }
+  if (typeof navigator !== 'undefined' && !navigator.userAgent?.includes('Node.js')) {
+    const lang = (navigator.language || '').toLowerCase();
+    if (lang.startsWith('en')) return 'en';
   }
   return 'es';
 }
