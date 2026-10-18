@@ -375,7 +375,7 @@ export class AcademicPanel {
 
       const activeTab = AppState.getInstance().getState().activeTab;
       const hasCustomAcademic = Boolean(chip.querySelector('.custom-academic-container'));
-      const isAcademicText = /\[?(EXAMEN|ENTREGA)\]?|calendario:\s*[^,]*(exam|ent[er]gra)|entrega|entegra|examen|exam|parcial|control|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir/i.test(chip.textContent || '');
+      const isAcademicText = /\[?(EXAMEN|ENTREGA)\]?|calendario:\s*[^,]*(exam|ent[er]gra)|entrega|entegra|ex[aá]men|exam|parcial|control|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir/i.test(chip.textContent || '');
 
       if (activeTab === 'ENTREGAS_EXAMENES' || hasCustomAcademic || isAcademicText) {
         e.preventDefault();

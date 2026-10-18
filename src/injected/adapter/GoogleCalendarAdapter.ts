@@ -1,7 +1,7 @@
 import { AcademicEventPayload, AppTab, EventType } from '../../shared/types';
 import { formatAcademicEventUrl } from '../../shared/formatters';
 import { safeSetInnerHTML, escapeHtml } from '../utils/dom';
-import { getIsolatedItem, setIsolatedItem } from '../utils/storage';
+import { getIsolatedItem, setIsolatedItem, removeIsolatedItem } from '../utils/storage';
 import { logger } from '../../shared/logger';
 import { RESILIENT_SELECTORS, queryResilient } from './selectors';
 import { AppState } from '../state';
@@ -32,6 +32,28 @@ export class GoogleCalendarAdapter {
   private constructor() {}
 
   public init(): void {
+    // Self-healing migration for v1.0.4:
+    // Reset legacy show_other_calendars=false to true and purge stale mock subjects
+    try {
+      if (getIsolatedItem('gcal_v104_migrated') !== 'true') {
+        setIsolatedItem('gcal_show_other_calendars', 'true');
+        const stored = getIsolatedItem('gcal_academic_subjects');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (
+              Array.isArray(parsed) &&
+              parsed.length <= 4 &&
+              parsed.every((s: any) => ['Matemáticas', 'Física', 'Programación', 'Economía'].includes(typeof s === 'string' ? s : s.name))
+            ) {
+              removeIsolatedItem('gcal_academic_subjects');
+            }
+          } catch (_) {}
+        }
+        setIsolatedItem('gcal_v104_migrated', 'true');
+      }
+    } catch (_) {}
+
     this.injectCleanLayoutStyles();
     this.tagCalendarRows();
     this.setupObserver();
@@ -238,11 +260,15 @@ export class GoogleCalendarAdapter {
   }
 
   public isAcademic(name: string): boolean {
-    return /examen|exam|entrega|entegra|control|parcial|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir|assignement/i.test(name);
+    return /ex[aá]men|exam|entrega|entegra|control|parcial|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir|assignement/i.test(name);
+  }
+
+  public isPersonal(name: string): boolean {
+    return /personal|mi calendario|my calendar|default calendar/i.test(name.trim());
   }
 
   public isOther(name: string): boolean {
-    return /task|tarea|festivo|holiday|feiertag|vacance|vacaci|ferie|recordatorio|reminder/i.test(name);
+    return /task|tarea|festivo|holiday|feiertag|vacance|vacaci|ferie|recordatorio|reminder/i.test(name) || this.isPersonal(name);
   }
 
   public isBirthday(name: string): boolean {
@@ -250,38 +276,38 @@ export class GoogleCalendarAdapter {
   }
 
   public isClass(name: string): boolean {
-    if (this.isAcademic(name) || this.isOther(name) || this.isBirthday(name)) {
+    if (this.isAcademic(name) || this.isOther(name) || this.isBirthday(name) || this.isPersonal(name)) {
       return false;
-    }
-    // Whitelist matching: strictly check against configured academic subjects in storage
-    const stored = getIsolatedItem('gcal_academic_subjects');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const clean = this.normalizeStr(name);
-          const matchesSubject = parsed.some((p: any) => {
-            const subName = typeof p === 'string' ? p : p.name;
-            const cleanSub = this.normalizeStr(subName || '');
-            return cleanSub && (cleanSub === clean || clean.includes(cleanSub) || cleanSub.includes(clean));
-          });
-          if (matchesSubject) return true;
-          // Also explicitly recognize common class-type calendars (e.g. "Teoría", "Prácticas", "Laboratorio", "Seminario", "Taller")
-          if (/teor[ií]a|pr[aá]ctica|laboratorio|seminario|taller/i.test(name)) {
-            return true;
-          }
-          return false;
-        }
-      } catch (_) {}
     }
     return true;
   }
 
   /**
-   * Returns detected subjects / classes from configured storage or Google Calendar rows.
+   * Returns detected subjects / classes from Google Calendar rows or configured storage.
    */
   public getDetectedClasses(): string[] {
-    // 1. First check configured subjects from onboarding / settings in isolated storage
+    // 1. Scan active DOM checkboxes first if available (gives the user's real calendars)
+    if (typeof document !== 'undefined') {
+      const checkboxes = Array.from(
+        document.querySelectorAll<HTMLInputElement>('input[type="checkbox"], [role="checkbox"]')
+      );
+      const domClasses = checkboxes
+        .map((cb) => {
+          const row = cb.closest<HTMLElement>('.XXcuqd') || cb.closest<HTMLElement>('li, .DYTqTd, [role="listitem"]');
+          const rawName = cb.getAttribute('aria-label') || row?.textContent?.trim() || '';
+          // Preserve emoji in calendar name, clean trailing options menu text
+          return rawName
+            .replace(/\bmore_vert.*$/i, '')
+            .trim();
+        })
+        .filter((name) => Boolean(name) && this.isClass(name));
+
+      if (domClasses.length > 0) {
+        return Array.from(new Set(domClasses));
+      }
+    }
+
+    // 2. Fallback to configured subjects in isolated storage
     try {
       const stored = getIsolatedItem('gcal_academic_subjects');
       if (stored) {
@@ -295,36 +321,12 @@ export class GoogleCalendarAdapter {
       }
     } catch (_) {}
 
-    if (typeof document === 'undefined') {
-      return [
-        'Matemáticas',
-        'Física',
-        'Programación',
-        'Economía'
-      ];
-    }
-    const checkboxes = Array.from(
-      document.querySelectorAll<HTMLInputElement>('input[type="checkbox"], [role="checkbox"]')
-    );
-    const classes = checkboxes
-      .map((cb) => {
-        const row = cb.closest<HTMLElement>('.XXcuqd') || cb.closest<HTMLElement>('li, .DYTqTd, [role="listitem"]');
-        const rawName = cb.getAttribute('aria-label') || row?.textContent?.trim() || '';
-        // Preserve emoji in calendar name, clean trailing options menu text
-        return rawName
-          .replace(/\bmore_vert.*$/i, '')
-          .trim();
-      })
-      .filter((name) => Boolean(name) && this.isClass(name));
-
-    return classes.length > 0
-      ? Array.from(new Set(classes))
-      : [
-          'Matemáticas',
-          'Física',
-          'Programación',
-          'Economía'
-        ];
+    return [
+      'Matemáticas',
+      'Física',
+      'Programación',
+      'Economía'
+    ];
   }
 
   /**
@@ -766,7 +768,7 @@ export class GoogleCalendarAdapter {
       const ariaHidden = chip.querySelector('.XuJrye')?.textContent || '';
       const allText = `${chip.innerText || ''} ${rawAria} ${ariaHidden}`;
 
-      const isAcademic = /\[?(EXAMEN|ENTREGA)\]?|calendario:\s*[^,]*(exam|ent[er]gra)|entrega|entegra|examen|exam|parcial|control|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir/i.test(allText);
+      const isAcademic = /\[?(EXAMEN|ENTREGA)\]?|calendario:\s*[^,]*(exam|ent[er]gra)|entrega|entegra|ex[aá]men|exam|parcial|control|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir/i.test(allText);
       if (!isAcademic) {
         const existing = chip.querySelector('.custom-academic-container');
         if (existing) {
@@ -807,7 +809,7 @@ export class GoogleCalendarAdapter {
       let type: EventType = 'EXAMEN';
       if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|deadline|assignment|due|devoir/i.test(allText)) {
         type = 'ENTREGA';
-      } else if (/calendario:\s*[^,]*exam/i.test(allText) || /\[EXAMEN\]/i.test(allText) || /examen|exam|parcial|control|quiz|klausur|pr[üu]fung/i.test(allText)) {
+      } else if (/calendario:\s*[^,]*exam/i.test(allText) || /\[EXAMEN\]/i.test(allText) || /ex[aá]men|exam|parcial|control|quiz|klausur|pr[üu]fung/i.test(allText)) {
         type = 'EXAMEN';
       } else if (/entrega|entegra|deadline|assignment|due/i.test(allText)) {
         type = 'ENTREGA';

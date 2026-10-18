@@ -57,6 +57,18 @@ export class OnboardingModal {
       this.showOtherCalendars = storedOtherCalendars === null ? true : storedOtherCalendars !== 'false';
       const storedEnsureCals = getIsolatedItem('gcal_academic_calendars_ensured');
       this.ensureAcademicCalendars = storedEnsureCals === 'true';
+
+      // If subjects are the default mocks and DOM has detected classes, upgrade to real detected classes
+      const detected = GoogleCalendarAdapter.getInstance().getDetectedClasses();
+      const isDefaultMock = this.subjects.length === 4 &&
+        this.subjects.every((s) => ['Matemáticas', 'Física', 'Programación', 'Economía'].includes(s.name));
+      if (isDefaultMock && detected.length > 0 && !detected.every((d) => ['Matemáticas', 'Física', 'Programación', 'Economía'].includes(d))) {
+        const palette = getPaletteById(this.selectedPaletteId);
+        this.subjects = detected.map((name, idx) => ({
+          name,
+          color: palette.colors[idx % palette.colors.length].hex
+        }));
+      }
     } catch (_) {}
   }
 

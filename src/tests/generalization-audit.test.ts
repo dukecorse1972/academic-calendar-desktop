@@ -159,6 +159,14 @@ describe('18. Whitelist-Based isClass Classification [P0-02]', () => {
     assert.ok(adapter.isClass('Teoría de Física I'));
     assert.ok(adapter.isClass('Prácticas'));
     assert.ok(adapter.isClass('Teoría'));
+
+    // Real university subjects from Google Calendar are recognized as classes
+    assert.ok(adapter.isClass('Fundamentos de los Computadores'));
+    assert.ok(adapter.isClass('Derecho de la Empresa'));
+    assert.ok(adapter.isClass('Introducción al Márketing'));
+    assert.ok(adapter.isClass('Matemáticas 1'));
+    assert.ok(adapter.isClass('Programación 1'));
+    assert.ok(adapter.isClass('Fundamentos de Economía'));
   });
 
   test('isClass returns false for non-class calendar names (birthdays, personal, exams, holidays)', () => {
