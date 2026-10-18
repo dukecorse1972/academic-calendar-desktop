@@ -1,6 +1,7 @@
 import { PREDEFINED_PALETTES, ColorPalette, getPaletteById } from '../../shared/palettes';
 import { GoogleCalendarAdapter } from '../adapter/GoogleCalendarAdapter';
-import { safeSetInnerHTML, escapeHtml } from '../utils/dom';
+import { safeSetInnerHTML, escapeHtml, setupFocusTrap } from '../utils/dom';
+import { getIsolatedItem, setIsolatedItem } from '../utils/storage';
 
 export interface SubjectConfig {
   name: string;
@@ -12,6 +13,7 @@ export class OnboardingModal {
   private modalOverlay: HTMLElement | null = null;
   private selectedPaletteId: string = 'mildliner';
   private escHandler: ((e: KeyboardEvent) => void) | null = null;
+  private focusTrapCleanup: (() => void) | null = null;
   private isEditMode: boolean = false;
   private hideBirthdays: boolean = true;
   private showOtherCalendars: boolean = false;
@@ -34,13 +36,12 @@ export class OnboardingModal {
   }
 
   private loadFromStorage(): void {
-    if (typeof localStorage === 'undefined') return;
     try {
-      const storedPalette = localStorage.getItem('gcal_active_palette');
+      const storedPalette = getIsolatedItem('gcal_active_palette');
       if (storedPalette) {
         this.selectedPaletteId = storedPalette;
       }
-      const storedSubjects = localStorage.getItem('gcal_academic_subjects');
+      const storedSubjects = getIsolatedItem('gcal_academic_subjects');
       if (storedSubjects) {
         const parsed = JSON.parse(storedSubjects);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -49,9 +50,9 @@ export class OnboardingModal {
       } else {
         this.applyPaletteColorsToSubjects();
       }
-      const storedBirthdays = localStorage.getItem('gcal_hide_birthdays');
+      const storedBirthdays = getIsolatedItem('gcal_hide_birthdays');
       this.hideBirthdays = storedBirthdays === null ? true : storedBirthdays !== 'false';
-      const storedOtherCalendars = localStorage.getItem('gcal_show_other_calendars');
+      const storedOtherCalendars = getIsolatedItem('gcal_show_other_calendars');
       this.showOtherCalendars = storedOtherCalendars === 'true';
     } catch (_) {}
   }
@@ -75,15 +76,17 @@ export class OnboardingModal {
   }
 
   public markCompleted(): void {
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem('gcal_academic_onboarding_completed', 'true');
-      } catch (_) {}
-    }
+    try {
+      setIsolatedItem('gcal_academic_onboarding_completed', 'true');
+    } catch (_) {}
   }
 
   public close(): void {
     this.markCompleted();
+    if (this.focusTrapCleanup) {
+      this.focusTrapCleanup();
+      this.focusTrapCleanup = null;
+    }
     if (this.escHandler && typeof window !== 'undefined') {
       window.removeEventListener('keydown', this.escHandler);
       this.escHandler = null;
@@ -343,6 +346,7 @@ export class OnboardingModal {
     );
 
     document.body.appendChild(this.modalOverlay);
+    this.focusTrapCleanup = setupFocusTrap(this.modalOverlay);
     this.setupListeners();
   }
 
@@ -583,31 +587,30 @@ export class OnboardingModal {
 
     this.subjects = validSubjects;
 
-    // 1. Save to localStorage
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem('gcal_academic_onboarding_completed', 'true');
-        localStorage.setItem('gcal_active_palette', this.selectedPaletteId);
-        localStorage.setItem('gcal_academic_subjects', JSON.stringify(this.subjects));
-        localStorage.setItem('gcal_hide_birthdays', String(this.hideBirthdays));
-        localStorage.setItem('gcal_show_other_calendars', String(this.showOtherCalendars));
+    // 1. Save to isolated storage
+    try {
+      setIsolatedItem('gcal_academic_onboarding_completed', 'true');
+      setIsolatedItem('gcal_active_palette', this.selectedPaletteId);
+      setIsolatedItem('gcal_academic_subjects', JSON.stringify(this.subjects));
+      setIsolatedItem('gcal_hide_birthdays', String(this.hideBirthdays));
+      setIsolatedItem('gcal_show_other_calendars', String(this.showOtherCalendars));
 
-        // Save color mapping
-        const colorMap: Record<string, string> = {};
-        this.subjects.forEach((s) => {
-          colorMap[s.name.toLowerCase().trim()] = s.color;
-        });
-        localStorage.setItem('gcal_subject_colors', JSON.stringify(colorMap));
-      } catch (_) {}
-    }
+      // Save color mapping
+      const colorMap: Record<string, string> = {};
+      this.subjects.forEach((s) => {
+        colorMap[s.name.toLowerCase().trim()] = s.color;
+      });
+      setIsolatedItem('gcal_subject_colors', JSON.stringify(colorMap));
+    } catch (_) {}
 
-    // 2. Request background creation of secondary calendars in Google Calendar if not yet ensured
-    const calendarsEnsured = typeof localStorage !== 'undefined' && localStorage.getItem('gcal_academic_calendars_ensured') === 'true';
+    // 2. Request background creation of secondary calendars in Google Calendar for exams, submissions and subjects [P0-01]
+    const subjectNames = this.subjects.map((s) => s.name.trim()).filter(Boolean);
+    const calendarsToEnsure = Array.from(new Set(['Exámenes', 'Entregas', ...subjectNames]));
     const desktopApi = (typeof window !== 'undefined' ? (window as any).gcalDesktopAPI : null);
-    if (!calendarsEnsured && desktopApi && typeof desktopApi.ensureAcademicCalendarsBackground === 'function') {
+    if (desktopApi && typeof desktopApi.ensureAcademicCalendarsBackground === 'function') {
       try {
-        desktopApi.ensureAcademicCalendarsBackground(['Exámenes', 'Entregas']);
-        localStorage.setItem('gcal_academic_calendars_ensured', 'true');
+        desktopApi.ensureAcademicCalendarsBackground(calendarsToEnsure);
+        setIsolatedItem('gcal_academic_calendars_ensured', 'true');
       } catch (_) {}
     }
 

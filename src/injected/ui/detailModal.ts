@@ -1,6 +1,14 @@
 import { GoogleCalendarAdapter } from '../adapter/GoogleCalendarAdapter';
-import { safeSetInnerHTML, escapeHtml } from '../utils/dom';
+import { safeSetInnerHTML, escapeHtml, setupFocusTrap } from '../utils/dom';
 import { AcademicEventPayload } from '../../shared/types';
+import { getIsolatedItem, setIsolatedItem } from '../utils/storage';
+import {
+  parseAcademicDateString,
+  calculateDuration,
+  DAY_NAMES_ES,
+  MONTH_NAMES_ES,
+  MONTHS_MAP
+} from '../utils/dateParsers';
 
 export interface AcademicEventDetail {
   type: 'EXAMEN' | 'ENTREGA';
@@ -21,57 +29,6 @@ export interface AcademicEventDetail {
   isCompleted: boolean;
 }
 
-const MONTH_NAMES_ES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
-const DAY_NAMES_ES = [
-  'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'
-];
-
-const MONTHS_MAP: Record<string, number> = {
-  // Español
-  enero: 0,
-  febrero: 1,
-  marzo: 2,
-  abril: 3,
-  mayo: 4,
-  junio: 5,
-  julio: 6,
-  agosto: 7,
-  septiembre: 8,
-  setiembre: 8,
-  octubre: 9,
-  noviembre: 10,
-  diciembre: 11,
-  // Inglés
-  january: 0,
-  jan: 0,
-  february: 1,
-  feb: 1,
-  march: 2,
-  mar: 2,
-  april: 3,
-  apr: 3,
-  may: 4,
-  june: 5,
-  jun: 5,
-  july: 6,
-  jul: 6,
-  august: 7,
-  aug: 7,
-  september: 8,
-  sep: 8,
-  sept: 8,
-  october: 9,
-  oct: 9,
-  november: 10,
-  nov: 10,
-  december: 11,
-  dec: 11
-};
-
 export class AcademicDetailModal {
   private static instance: AcademicDetailModal | null = null;
   private modalOverlay: HTMLElement | null = null;
@@ -80,6 +37,7 @@ export class AcademicDetailModal {
   private isDeleting = false;
   private isCompletePanelOpen = false;
   private escHandler: ((e: KeyboardEvent) => void) | null = null;
+  private focusTrapCleanup: (() => void) | null = null;
 
   // Rescheduling state
   private isRescheduling = false;
@@ -122,6 +80,10 @@ export class AcademicDetailModal {
   }
 
   public close(): void {
+    if (this.focusTrapCleanup) {
+      this.focusTrapCleanup();
+      this.focusTrapCleanup = null;
+    }
     if (this.escHandler && typeof window !== 'undefined') {
       window.removeEventListener('keydown', this.escHandler);
       this.escHandler = null;
@@ -182,70 +144,15 @@ export class AcademicDetailModal {
       endTime = `${String((h + 2) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
-    // Calculate duration
+    // Calculate duration & parse date with multilingual dateParsers [P3-01]
     const [sh, sm] = startTime.split(':').map(Number);
-    const [eh, em] = endTime.split(':').map(Number);
-    let diffMins = (eh * 60 + em) - (sh * 60 + sm);
-    if (diffMins <= 0) diffMins += 24 * 60;
-    const durH = Math.floor(diffMins / 60);
-    const durM = diffMins % 60;
-    let durationStr = '';
-    if (durH > 0 && durM > 0) durationStr = `${durH} h ${durM} min`;
-    else if (durH > 0) durationStr = `${durH} hora${durH > 1 ? 's' : ''}`;
-    else durationStr = `${durM} min`;
+    const durationStr = calculateDuration(startTime, endTime);
 
     // 4. Date
-    let dateStr = '';
-    let isoDate = '';
-    // 1. Try Spanish date pattern: "15 de octubre de 2026"
-    let dateMatch = allText.match(/(\d{1,2})\s+de\s+([a-zçáéíóúñ]+)(?:\s+de\s+(\d{4}))?/i);
-    let matchedDay = 0;
-    let matchedMonth = 0;
-    let matchedYear = new Date().getFullYear();
-    let hasMatch = false;
-
-    if (dateMatch) {
-      matchedDay = parseInt(dateMatch[1], 10);
-      const monthName = dateMatch[2].toLowerCase();
-      matchedMonth = MONTHS_MAP[monthName] ?? new Date().getMonth();
-      matchedYear = dateMatch[3] ? parseInt(dateMatch[3], 10) : new Date().getFullYear();
-      hasMatch = true;
-    } else {
-      // 2. Try English date patterns: "October 15, 2026" or "15 Oct 2026"
-      const monthNamesPattern = Object.keys(MONTHS_MAP).filter(k => k.length >= 3).join('|');
-      const enMatch1 = allText.match(new RegExp(`\\b(${monthNamesPattern})\\b\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s*(\\d{4})?`, 'i'));
-      if (enMatch1 && MONTHS_MAP[enMatch1[1].toLowerCase()] !== undefined) {
-        matchedMonth = MONTHS_MAP[enMatch1[1].toLowerCase()];
-        matchedDay = parseInt(enMatch1[2], 10);
-        matchedYear = enMatch1[3] ? parseInt(enMatch1[3], 10) : new Date().getFullYear();
-        hasMatch = true;
-      } else {
-        const enMatch2 = allText.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?(${monthNamesPattern})\\b,?\\s*(\\d{4})?`, 'i'));
-        if (enMatch2 && MONTHS_MAP[enMatch2[2].toLowerCase()] !== undefined) {
-          matchedDay = parseInt(enMatch2[1], 10);
-          matchedMonth = MONTHS_MAP[enMatch2[2].toLowerCase()];
-          matchedYear = enMatch2[3] ? parseInt(enMatch2[3], 10) : new Date().getFullYear();
-          hasMatch = true;
-        }
-      }
-    }
-
-    let eventDate: Date | null = null;
-    if (hasMatch) {
-      eventDate = new Date(matchedYear, matchedMonth, matchedDay, sh, sm);
-      const capMonth = MONTH_NAMES_ES[matchedMonth] || 'Mes';
-      const weekDayName = eventDate.toLocaleDateString('es-ES', { weekday: 'long' });
-      const capWeekDay = weekDayName.charAt(0).toUpperCase() + weekDayName.slice(1);
-      dateStr = `${capWeekDay}, ${matchedDay} de ${capMonth} de ${matchedYear}`;
-      isoDate = `${matchedYear}-${String(matchedMonth + 1).padStart(2, '0')}-${String(matchedDay).padStart(2, '0')}`;
-    } else {
-      const now = new Date();
-      const capMonth = now.toLocaleDateString('es-ES', { month: 'long' });
-      const capWeekDay = now.toLocaleDateString('es-ES', { weekday: 'long' });
-      dateStr = `${capWeekDay.charAt(0).toUpperCase() + capWeekDay.slice(1)}, ${now.getDate()} de ${capMonth} de ${now.getFullYear()}`;
-      eventDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm);
-      isoDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    }
+    const parsedDate = parseAcademicDateString(allText, sh, sm);
+    const dateStr = parsedDate.dateStr;
+    const isoDate = parsedDate.isoDate;
+    const eventDate = parsedDate.eventDate;
 
     // 5. Title & Subject
     const titleSpan = chip.querySelector('.I0UMhf');
@@ -299,16 +206,16 @@ export class AcademicDetailModal {
     }
     if (!title) title = 'Evento Académico';
 
-    // 6. Cached description from localStorage or allText
+    // 6. Cached description from isolated storage or allText [P0-03]
     let description = '';
     try {
-      const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
+      const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
       const cleanKey = title.toLowerCase().trim();
       const fullKey = `${cleanKey}_${subject.toLowerCase().trim()}`;
       description = meta[fullKey]?.description || meta[cleanKey]?.description || '';
     } catch (_) {}
 
-    // Fallback: If not in localStorage, look for explicit description/notas in chip text
+    // Fallback: If not in storage, look for explicit description/notas in chip text
     if (!description) {
       const descMatch = allText.match(/(?:descripci[oó]n|notas?):\s*([^\n,]+)/i);
       if (descMatch && !/sin ubicaci|ubicaci[oó]n/i.test(descMatch[1])) {
@@ -362,13 +269,11 @@ export class AcademicDetailModal {
     // 10. Completed status
     let isCompleted = false;
     try {
-      if (typeof localStorage !== 'undefined') {
-        const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
-        const cleanKey = title.toLowerCase().trim();
-        const fullKey = `${cleanKey}_${subject.toLowerCase().trim()}`;
-        if (meta[eventId]?.completed || meta[fullKey]?.completed || meta[cleanKey]?.completed) {
-          isCompleted = true;
-        }
+      const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
+      const cleanKey = title.toLowerCase().trim();
+      const fullKey = `${cleanKey}_${subject.toLowerCase().trim()}`;
+      if (meta[eventId]?.completed || meta[fullKey]?.completed || meta[cleanKey]?.completed) {
+        isCompleted = true;
       }
     } catch (_) {}
 
@@ -1158,6 +1063,7 @@ export class AcademicDetailModal {
     );
 
     document.body.appendChild(this.modalOverlay);
+    this.focusTrapCleanup = setupFocusTrap(this.modalOverlay);
     this.setupListeners();
   }
 
@@ -1216,13 +1122,23 @@ export class AcademicDetailModal {
       detail.description = newNotes;
 
       try {
-        const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
+        const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
         const cleanKey = detail.title.toLowerCase().trim();
         const fullKey = `${cleanKey}_${detail.subject.toLowerCase().trim()}`;
         meta[cleanKey] = { description: newNotes, subject: detail.subject, type: detail.type };
         meta[fullKey] = { description: newNotes, subject: detail.subject, type: detail.type };
-        localStorage.setItem('gcal_academic_meta', JSON.stringify(meta));
+        setIsolatedItem('gcal_academic_meta', JSON.stringify(meta));
       } catch (_) {}
+
+      // Cloud description sync [P2-01]
+      const desktopApi = (typeof window !== 'undefined' ? (window as any).gcalDesktopAPI : null);
+      if (desktopApi && typeof desktopApi.updateEventDescriptionBackground === 'function' && detail.eventId) {
+        desktopApi.updateEventDescriptionBackground({
+          eventId: detail.eventId,
+          eventTitle: detail.title,
+          description: newNotes
+        }).catch(() => {});
+      }
 
       // Refresh chips on calendar grid
       GoogleCalendarAdapter.getInstance().enhanceAcademicChips();
@@ -1293,7 +1209,7 @@ export class AcademicDetailModal {
 
         // Clean local storage cache
         try {
-          const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
+          const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
           const cleanKey = detail.title.toLowerCase().trim();
           const fullKey = `${cleanKey}_${detail.subject.toLowerCase().trim()}`;
           delete meta[cleanKey];
@@ -1301,7 +1217,7 @@ export class AcademicDetailModal {
           if (detail.eventId) {
             delete meta[detail.eventId];
           }
-          localStorage.setItem('gcal_academic_meta', JSON.stringify(meta));
+          setIsolatedItem('gcal_academic_meta', JSON.stringify(meta));
         } catch (_) {}
 
         // Remove chip from view
@@ -1500,9 +1416,9 @@ export class AcademicDetailModal {
         const adapter = GoogleCalendarAdapter.getInstance();
         await adapter.moveAcademicEvent(detail.eventId, newPayload);
 
-        // Update local metadata
+        // Update local metadata in isolated storage [P0-03]
         try {
-          const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
+          const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
           const cleanKey = detail.title.toLowerCase().trim();
           const fullKey = `${cleanKey}_${detail.subject.toLowerCase().trim()}`;
           const currentEntry = meta[fullKey] || meta[cleanKey] || {};
@@ -1511,7 +1427,7 @@ export class AcademicDetailModal {
           currentEntry.endTime = this.rescheduleEndTime;
           meta[cleanKey] = currentEntry;
           meta[fullKey] = currentEntry;
-          localStorage.setItem('gcal_academic_meta', JSON.stringify(meta));
+          setIsolatedItem('gcal_academic_meta', JSON.stringify(meta));
         } catch (_) {}
 
         // Fade old chip
@@ -1715,27 +1631,25 @@ export class AcademicDetailModal {
     detail.isCompleted = isDone;
 
     try {
-      if (typeof localStorage !== 'undefined') {
-        const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
-        const cleanKey = detail.title.toLowerCase().trim();
-        const fullKey = `${cleanKey}_${detail.subject.toLowerCase().trim()}`;
+      const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
+      const cleanKey = detail.title.toLowerCase().trim();
+      const fullKey = `${cleanKey}_${detail.subject.toLowerCase().trim()}`;
 
-        const entry = meta[fullKey] || meta[cleanKey] || {
-          description: detail.description,
-          subject: detail.subject,
-          type: detail.type
-        };
+      const entry = meta[fullKey] || meta[cleanKey] || {
+        description: detail.description,
+        subject: detail.subject,
+        type: detail.type
+      };
 
-        entry.completed = isDone;
-        entry.hiddenMode = isDone ? mode : undefined;
-        entry.title = detail.title;
-        entry.subject = detail.subject;
-        meta[cleanKey] = entry;
-        meta[fullKey] = entry;
-        if (detail.eventId) meta[detail.eventId] = entry;
+      entry.completed = isDone;
+      entry.hiddenMode = isDone ? mode : undefined;
+      entry.title = detail.title;
+      entry.subject = detail.subject;
+      meta[cleanKey] = entry;
+      meta[fullKey] = entry;
+      if (detail.eventId) meta[detail.eventId] = entry;
 
-        localStorage.setItem('gcal_academic_meta', JSON.stringify(meta));
-      }
+      setIsolatedItem('gcal_academic_meta', JSON.stringify(meta));
     } catch (_) {}
 
     // Update chip in calendar grid

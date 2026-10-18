@@ -3,22 +3,16 @@ import { TARGET_CALENDARS } from '../../shared/constants';
 import { AppState } from '../state';
 import { GoogleCalendarAdapter } from '../adapter/GoogleCalendarAdapter';
 import { OnboardingModal } from './onboardingModal';
-import { safeSetInnerHTML, escapeHtml } from '../utils/dom';
-
-const MONTH_NAMES_ES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
-const DAY_NAMES_ES = [
-  'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'
-];
+import { safeSetInnerHTML, escapeHtml, setupFocusTrap } from '../utils/dom';
+import { getIsolatedItem, setIsolatedItem } from '../utils/storage';
+import { DAY_NAMES_ES, MONTH_NAMES_ES, calculateDuration, toISODateString } from '../utils/dateParsers';
 
 export class CreatorModal {
   private static instance: CreatorModal | null = null;
   private modalOverlay: HTMLElement | null = null;
   private selectedType: EventType = 'EXAMEN';
   private selectedSubject: string = '';
+  private focusTrapCleanup: (() => void) | null = null;
 
   // Calendar State
   private viewDate: Date = new Date();
@@ -37,6 +31,7 @@ export class CreatorModal {
     if (this.modalOverlay) {
       this.refreshSubjects();
       this.modalOverlay.style.display = 'flex';
+      this.focusTrapCleanup = setupFocusTrap(this.modalOverlay);
       const card = this.modalOverlay.querySelector('#gcal-creator-card') as HTMLElement;
       if (card) {
         card.style.transform = 'scale(1) translateY(0)';
@@ -49,6 +44,10 @@ export class CreatorModal {
   }
 
   public close(): void {
+    if (this.focusTrapCleanup) {
+      this.focusTrapCleanup();
+      this.focusTrapCleanup = null;
+    }
     if (this.modalOverlay) {
       const card = this.modalOverlay.querySelector('#gcal-creator-card') as HTMLElement;
       if (card) {
@@ -90,10 +89,7 @@ export class CreatorModal {
   }
 
   private toISODate(date: Date): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return toISODateString(date);
   }
 
   private updateDuration(): void {
@@ -108,28 +104,7 @@ export class CreatorModal {
     const endVal = endInput.value;
     if (!startVal || !endVal) return;
 
-    const [sh, sm] = startVal.split(':').map(Number);
-    const [eh, em] = endVal.split(':').map(Number);
-
-    let diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
-    if (diffMinutes < 0) {
-      diffMinutes += 24 * 60; // Next day
-    }
-
-    const hours = Math.floor(diffMinutes / 60);
-    const mins = diffMinutes % 60;
-
-    let text = '';
-    if (hours > 0 && mins > 0) {
-      text = `${hours} h ${mins} min`;
-    } else if (hours > 0) {
-      text = `${hours} hora${hours > 1 ? 's' : ''}`;
-    } else if (mins > 0) {
-      text = `${mins} minutos`;
-    } else {
-      text = '0 min';
-    }
-
+    const text = calculateDuration(startVal, endVal);
     durationLabel.textContent = `⏱️ Duración: ${text}`;
   }
 
@@ -643,6 +618,7 @@ export class CreatorModal {
     `);
 
     document.body.appendChild(this.modalOverlay);
+    this.focusTrapCleanup = setupFocusTrap(this.modalOverlay);
     this.renderCalendarGrid();
     this.updateDuration();
     this.setupListeners();
@@ -1033,12 +1009,12 @@ export class CreatorModal {
 
       if (description) {
         try {
-          const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
+          const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
           const cleanKey = title.toLowerCase().trim();
           const fullKey = `${cleanKey}_${subject.toLowerCase().trim()}`;
           meta[cleanKey] = { description, subject, type: this.selectedType };
           meta[fullKey] = { description, subject, type: this.selectedType };
-          localStorage.setItem('gcal_academic_meta', JSON.stringify(meta));
+          setIsolatedItem('gcal_academic_meta', JSON.stringify(meta));
         } catch (_) {}
       }
 

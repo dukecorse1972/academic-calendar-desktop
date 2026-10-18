@@ -4,24 +4,72 @@
  */
 
 export const RESILIENT_SELECTORS = {
-  // Save button in event edit page
+  // Save button in event edit page (Multilingual: ES, EN, CA, GL, FR, DE)
   saveButton: [
     '#xSaveBu',
     'button[data-action="save"]',
     'button[aria-label*="Guardar" i]',
     'button[aria-label*="Save" i]',
+    'button[aria-label*="Desa" i]',
+    'button[aria-label*="Gardar" i]',
+    'button[aria-label*="Enregistrer" i]',
+    'button[aria-label*="Speichern" i]',
     '[role="button"][aria-label*="Guardar" i]',
-    '[role="button"][aria-label*="Save" i]'
+    '[role="button"][aria-label*="Save" i]',
+    '[role="button"][aria-label*="Desa" i]'
   ],
 
-  // Delete button in event edit page
+  // Delete button in event edit page (Multilingual: ES, EN, CA, GL, FR, DE)
   deleteButton: [
     '#xDelBu',
     'button[data-action="delete"]',
     'button[aria-label*="Eliminar evento" i]',
     'button[aria-label*="Delete event" i]',
+    'button[aria-label*="Eliminar" i]',
+    'button[aria-label*="Delete" i]',
+    'button[aria-label*="Suprimeix" i]',
+    'button[aria-label*="Supprimer" i]',
+    'button[aria-label*="Löschen" i]',
     '[role="button"][aria-label*="Eliminar evento" i]',
-    '[role="button"][aria-label*="Delete event" i]'
+    '[role="button"][aria-label*="Delete event" i]',
+    '[role="button"][aria-label*="Eliminar" i]',
+    '[role="button"][aria-label*="Delete" i]',
+    '[role="button"][aria-label*="Suprimeix" i]'
+  ],
+
+  // Description input/textarea in event edit page
+  descriptionInput: [
+    '[role="textbox"][aria-label*="descripci" i]',
+    '[role="textbox"][aria-label*="description" i]',
+    'textarea[aria-label*="descripci" i]',
+    'textarea[aria-label*="description" i]',
+    '#xDescIn',
+    'div[contenteditable="true"][aria-label*="descripci" i]',
+    'div[contenteditable="true"]'
+  ],
+
+  // Date and Time inputs in event edit page
+  startDateInput: [
+    'input[aria-label*="Fecha de inicio" i]',
+    'input[aria-label*="Start date" i]',
+    'input[aria-label*="Data d\'inici" i]',
+    'input[aria-label*="Date de début" i]',
+    'input[aria-label*="Startdatum" i]',
+    '#xDateIn'
+  ],
+  startTimeInput: [
+    'input[aria-label*="Hora de inicio" i]',
+    'input[aria-label*="Start time" i]',
+    'input[aria-label*="Hora d\'inici" i]',
+    'input[aria-label*="Heure de début" i]',
+    'input[aria-label*="Startzeit" i]'
+  ],
+  endTimeInput: [
+    'input[aria-label*="Hora de finalización" i]',
+    'input[aria-label*="End time" i]',
+    'input[aria-label*="Hora de finalització" i]',
+    'input[aria-label*="Heure de fin" i]',
+    'input[aria-label*="Endzeit" i]'
   ],
 
   // More actions button trigger in event edit page

@@ -94,27 +94,29 @@ describe('5. Subject Colors & Option 1 HSL Adaptation', () => {
   const { GoogleCalendarAdapter } = require('../injected/adapter/GoogleCalendarAdapter');
   const adapter = GoogleCalendarAdapter.getInstance();
 
-  test('Provides default subject colors for all 6 university classes', () => {
+  test('Provides default subject colors for generic classes and subjects [P1-01]', () => {
     const map = adapter.getSubjectColorMap();
-    assert.ok(map.has('computadores'));
+    assert.ok(map.has('clase 1'));
+    assert.ok(map.has('clase 2'));
+    assert.ok(map.has('asignatura 1'));
     assert.ok(map.has('programacion'));
     assert.ok(map.has('economia'));
-    assert.ok(map.has('derecho'));
     assert.ok(map.has('matematicas'));
-    assert.ok(map.has('marketing'));
+    assert.ok(map.has('fisica'));
 
-    assert.equal(map.get('computadores'), '#B69A31');
-    assert.equal(map.get('programacion 1'), '#90B0C4');
+    assert.equal(map.get('clase 1'), '#B69A31');
+    assert.equal(map.get('programacion'), '#90B0C4');
   });
 
-  test('findSubjectColor accurately matches subjects by keyword and accents', () => {
+  test('findSubjectColor accurately matches subjects by keyword and accents or deterministic fallback', () => {
     const map = adapter.getSubjectColorMap();
-    assert.equal(adapter.findSubjectColor('🖥️ Fundamentos de los Computadores', map), '#B69A31');
-    assert.equal(adapter.findSubjectColor('🧑‍💻 Programación 1', map), '#90B0C4');
+    assert.equal(adapter.findSubjectColor('🧑‍💻 Programación', map), '#90B0C4');
     assert.equal(adapter.findSubjectColor('Fundamentos de Economía', map), '#96BCBB');
-    assert.equal(adapter.findSubjectColor('Derecho de la Empresa', map), '#C2842D');
-    assert.equal(adapter.findSubjectColor('Matemáticas 1', map), '#BAB35A');
-    assert.equal(adapter.findSubjectColor('Introducción al Márketing', map), '#6B8D8A');
+    assert.equal(adapter.findSubjectColor('Matemáticas', map), '#BAB35A');
+    assert.equal(adapter.findSubjectColor('Física Cuántica', map), '#A1D0CA');
+    // Deterministic fallback for unmapped courses
+    const detColor = adapter.findSubjectColor('🖥️ Computadores', map);
+    assert.match(detColor, /^#[0-9A-Fa-f]{6}$/);
   });
 
   test('Generates distinct, high contrast colors for Examen vs Entrega of the same subject', () => {

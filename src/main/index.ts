@@ -3,13 +3,22 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { DESKTOP_USER_AGENT } from './session';
 import { createMainWindow, getMainWindow, setIsQuitting } from './window';
+import { logger } from '../shared/logger';
 
 // Ensure user session and partition persist identically across dev and packaged executables
-// (Preserves existing logins from legacy directory if present)
-const legacyUserData = path.join(app.getPath('appData'), 'google-calendar-win');
-const newUserData = path.join(app.getPath('appData'), 'academic-calendar-win');
-const persistentUserData = fs.existsSync(legacyUserData) ? legacyUserData : newUserData;
+// (Adopts canonical cursa-desktop path while preserving existing user logins if present)
+const cursaUserData = path.join(app.getPath('appData'), 'cursa-desktop');
+const legacyUserData1 = path.join(app.getPath('appData'), 'academic-calendar-win');
+const legacyUserData2 = path.join(app.getPath('appData'), 'google-calendar-win');
+
+let persistentUserData = cursaUserData;
+if (fs.existsSync(legacyUserData1)) {
+  persistentUserData = legacyUserData1;
+} else if (fs.existsSync(legacyUserData2)) {
+  persistentUserData = legacyUserData2;
+}
 app.setPath('userData', persistentUserData);
+logger.info('Application starting with userData path:', persistentUserData);
 
 // Set application identity for Windows Start Menu & Taskbar
 app.setName('Cursa');

@@ -1,6 +1,10 @@
 import { AcademicEventPayload, AppTab, EventType } from '../../shared/types';
 import { formatAcademicEventUrl } from '../../shared/formatters';
 import { safeSetInnerHTML, escapeHtml } from '../utils/dom';
+import { getIsolatedItem, setIsolatedItem } from '../utils/storage';
+import { logger } from '../../shared/logger';
+import { RESILIENT_SELECTORS, queryResilient } from './selectors';
+import { AppState } from '../state';
 
 export interface NativeCalendarInfo {
   name: string;
@@ -52,18 +56,18 @@ export class GoogleCalendarAdapter {
    * Ensures clean native layout without gaps or misalignment.
    */
   public shouldHideBirthdays(): boolean {
-    if (typeof localStorage === 'undefined') return true;
     try {
-      return localStorage.getItem('gcal_hide_birthdays') !== 'false';
+      const val = getIsolatedItem('gcal_hide_birthdays');
+      return val !== 'false';
     } catch {
       return true;
     }
   }
 
   public shouldShowOtherCalendars(): boolean {
-    if (typeof localStorage === 'undefined') return false;
     try {
-      return localStorage.getItem('gcal_show_other_calendars') === 'true';
+      const val = getIsolatedItem('gcal_show_other_calendars');
+      return val === 'true';
     } catch {
       return false;
     }
@@ -234,40 +238,56 @@ export class GoogleCalendarAdapter {
   }
 
   public isAcademic(name: string): boolean {
-    return /examen|exam|entrega|entegra|deadline|assignment|due/i.test(name);
+    return /examen|exam|entrega|entegra|deadline|assignment|due|klausur|prüfung|devoir|assignement/i.test(name);
   }
 
   public isOther(name: string): boolean {
-    return /task|tarea|festivo|holiday/i.test(name);
+    return /task|tarea|festivo|holiday|feiertag|vacance|vacaci|ferie/i.test(name);
   }
 
   public isBirthday(name: string): boolean {
-    return /cumpleaño|birthday|anniversaire/i.test(name);
+    return /cumpleaño|birthday|anniversaire|geburtstag|aniversari/i.test(name);
   }
 
   public isClass(name: string): boolean {
-    return !this.isAcademic(name) && !this.isOther(name) && !this.isBirthday(name);
+    if (this.isAcademic(name) || this.isOther(name) || this.isBirthday(name)) {
+      return false;
+    }
+    // Whitelist matching: strictly check against configured academic subjects in storage
+    const stored = getIsolatedItem('gcal_academic_subjects');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const clean = this.normalizeStr(name);
+          return parsed.some((p: any) => {
+            const subName = typeof p === 'string' ? p : p.name;
+            const cleanSub = this.normalizeStr(subName || '');
+            return cleanSub && (cleanSub === clean || clean.includes(cleanSub) || cleanSub.includes(clean));
+          });
+        }
+      } catch (_) {}
+    }
+    return true;
   }
 
   /**
    * Returns detected subjects / classes from configured storage or Google Calendar rows.
    */
   public getDetectedClasses(): string[] {
-    // 1. First check configured subjects from onboarding / settings in localStorage
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('gcal_academic_subjects');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const names = parsed
-              .map((p: any) => (typeof p === 'string' ? p : p.name))
-              .filter(Boolean);
-            if (names.length > 0) return Array.from(new Set(names));
-          }
+    // 1. First check configured subjects from onboarding / settings in isolated storage
+    try {
+      const stored = getIsolatedItem('gcal_academic_subjects');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const names = parsed
+            .map((p: any) => (typeof p === 'string' ? p : p.name))
+            .filter(Boolean);
+          if (names.length > 0) return Array.from(new Set(names));
         }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
     if (typeof document === 'undefined') {
       return [
@@ -396,6 +416,9 @@ export class GoogleCalendarAdapter {
           } else if (!shouldCheck && isChecked) {
             cb.click();
           }
+          try {
+            AppState.getInstance().setCalendarVisibility(rawName, shouldCheck);
+          } catch (_) {}
         });
       } finally {
         this.isSyncing = false;
@@ -534,18 +557,10 @@ export class GoogleCalendarAdapter {
     'asignatura 8': '#8E24AA',
     'asignatura 9': '#E53935',
     'asignatura 10': '#FB8C00',
-    'fundamentos de los computadores': '#B69A31',
-    'computadores': '#B69A31',
-    'programacion 1': '#90B0C4',
-    'programacion': '#90B0C4',
-    'fundamentos de economia': '#96BCBB',
-    'economia': '#96BCBB',
-    'derecho de la empresa': '#C2842D',
-    'derecho': '#C2842D',
-    'matematicas 1': '#BAB35A',
     'matematicas': '#BAB35A',
-    'introduccion al marketing': '#6B8D8A',
-    'marketing': '#6B8D8A'
+    'fisica': '#A1D0CA',
+    'programacion': '#90B0C4',
+    'economia': '#96BCBB'
   };
 
   public normalizeStr(str: string): string {
@@ -590,30 +605,28 @@ export class GoogleCalendarAdapter {
       colorMap.set(key, color);
     }
 
-    // 2. Load any previously saved dynamic colors from localStorage
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const cached = JSON.parse(localStorage.getItem('gcal_subject_colors') || '{}');
-        for (const [key, color] of Object.entries(cached)) {
-          if (typeof color === 'string' && color) {
-            colorMap.set(key.toLowerCase(), color);
-            colorMap.set(this.normalizeStr(key), color);
-          }
+    // 2. Load any previously saved dynamic colors from isolated storage
+    try {
+      const cached = JSON.parse(getIsolatedItem('gcal_subject_colors') || '{}');
+      for (const [key, color] of Object.entries(cached)) {
+        if (typeof color === 'string' && color) {
+          colorMap.set(key.toLowerCase(), color);
+          colorMap.set(this.normalizeStr(key), color);
         }
-        const storedSubjects = localStorage.getItem('gcal_academic_subjects');
-        if (storedSubjects) {
-          const parsedSubs = JSON.parse(storedSubjects);
-          if (Array.isArray(parsedSubs)) {
-            parsedSubs.forEach((s: any) => {
-              if (s && s.name && s.color) {
-                colorMap.set(s.name.toLowerCase().trim(), s.color);
-                colorMap.set(this.normalizeStr(s.name), s.color);
-              }
-            });
-          }
+      }
+      const storedSubjects = getIsolatedItem('gcal_academic_subjects');
+      if (storedSubjects) {
+        const parsedSubs = JSON.parse(storedSubjects);
+        if (Array.isArray(parsedSubs)) {
+          parsedSubs.forEach((s: any) => {
+            if (s && s.name && s.color) {
+              colorMap.set(s.name.toLowerCase().trim(), s.color);
+              colorMap.set(this.normalizeStr(s.name), s.color);
+            }
+          });
         }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
     // 3. Scan active checkboxes in the sidebar (if currently rendered in DOM)
     if (typeof document !== 'undefined') {
@@ -653,13 +666,13 @@ export class GoogleCalendarAdapter {
         }
       });
 
-      if (updatedFromDOM && typeof localStorage !== 'undefined') {
+      if (updatedFromDOM) {
         try {
           const obj: Record<string, string> = {};
           for (const [k, v] of colorMap.entries()) {
             obj[k] = v;
           }
-          localStorage.setItem('gcal_subject_colors', JSON.stringify(obj));
+          setIsolatedItem('gcal_subject_colors', JSON.stringify(obj));
         } catch (_) {}
       }
     }
@@ -813,10 +826,10 @@ export class GoogleCalendarAdapter {
         }
       }
 
-      // Extract description & cached subject from local storage if available
+      // Extract description & cached subject from isolated storage if available
       let cachedDesc = '';
       try {
-        const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
+        const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
         const cleanKey = title.toLowerCase().trim();
         const fullKey = `${cleanKey}_${subject.toLowerCase().trim()}`;
         cachedDesc = meta[fullKey]?.description || meta[cleanKey]?.description || '';
@@ -884,14 +897,12 @@ export class GoogleCalendarAdapter {
       // Check if this entrega is completed / in modo oculto
       let isCompleted = false;
       try {
-        if (typeof localStorage !== 'undefined') {
-          const meta = JSON.parse(localStorage.getItem('gcal_academic_meta') || '{}');
-          const cleanKey = title.toLowerCase().trim();
-          const fullKey = `${cleanKey}_${subject.toLowerCase().trim()}`;
-          const evId = chip.getAttribute('data-eventid') || '';
-          if (meta[evId]?.completed || meta[fullKey]?.completed || meta[cleanKey]?.completed) {
-            isCompleted = true;
-          }
+        const meta = JSON.parse(getIsolatedItem('gcal_academic_meta') || '{}');
+        const cleanKey = title.toLowerCase().trim();
+        const fullKey = `${cleanKey}_${subject.toLowerCase().trim()}`;
+        const evId = chip.getAttribute('data-eventid') || '';
+        if (meta[evId]?.completed || meta[fullKey]?.completed || meta[cleanKey]?.completed) {
+          isCompleted = true;
         }
       } catch (_) {}
 

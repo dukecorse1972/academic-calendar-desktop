@@ -10,6 +10,8 @@ const desktopApi = {
     ipcRenderer.invoke('delete-academic-event-background', eventId),
   moveAcademicEventBackground: (data: { eventId?: string; payload: any }) =>
     ipcRenderer.invoke('move-academic-event-background', data),
+  updateEventDescriptionBackground: (data: { eventId?: string; eventTitle?: string; description: string }) =>
+    ipcRenderer.invoke('update-event-description-background', data),
   ensureAcademicCalendarsBackground: (calendarNames?: string[]) =>
     ipcRenderer.invoke('ensure-academic-calendars-background', calendarNames)
 };

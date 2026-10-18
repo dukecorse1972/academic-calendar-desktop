@@ -71,4 +71,5 @@ class Logger {
   }
 }
 
+export { Logger };
 export const logger = Logger.getInstance();
