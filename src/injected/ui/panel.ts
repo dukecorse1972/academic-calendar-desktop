@@ -60,6 +60,9 @@ export class AcademicPanel {
     // 6. Setup interception on academic event chips to open custom extended view
     this.setupEventChipClickInterception();
 
+    // 7. Setup injection inside Google's native Settings gear menu
+    this.setupSettingsMenuInterception();
+
     // 7. Subscribe to state updates
     const appState = AppState.getInstance();
     this.unsubscribeState = appState.subscribe((state) => {
@@ -146,6 +149,16 @@ export class AcademicPanel {
           background: var(--gcal-selected, #004a77) !important;
           color: var(--gcal-accent, #8ab4f8) !important;
           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        #gcal-academic-settings-menuitem {
+          transition: background-color 0.15s ease, color 0.15s ease;
+          cursor: pointer !important;
+        }
+
+        #gcal-academic-settings-menuitem:hover {
+          background-color: var(--gcal-surface-hover, rgba(0, 0, 0, 0.06)) !important;
+          color: var(--gcal-accent, #1a73e8) !important;
         }
       `;
       document.head.appendChild(style);
@@ -252,6 +265,12 @@ export class AcademicPanel {
         target.container.appendChild(this.headerTabsContainer);
       }
       this.updateActiveTabStyles(AppState.getInstance().getState().activeTab);
+    }
+
+    // Clean up any legacy or misplaced settings button from header to ensure pristine native layout
+    const oldBtn = document.getElementById('gcal-academic-settings-btn');
+    if (oldBtn) {
+      oldBtn.remove();
     }
 
     return true;
@@ -404,6 +423,15 @@ export class AcademicPanel {
 
       if (isInput || isCreatorOpen || isDetailOpen || isOnboardingOpen) return;
 
+      // Universal shortcut Ctrl+, (or Cmd+,) to open settings in edit mode
+      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        OnboardingModal.getInstance().open(true);
+        return;
+      }
+
       // Ignore if modifier keys (Ctrl, Alt, Meta) are held down
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
@@ -481,6 +509,7 @@ export class AcademicPanel {
         debounceTimer = setTimeout(() => {
           debounceTimer = null;
           this.mountInTopHeader();
+          this.injectSettingsMenuItemIfMenuOpen();
         }, 120);
       });
       this.observer.observe(document.body, { childList: true, subtree: true });
@@ -491,6 +520,179 @@ export class AcademicPanel {
     } else {
       document.addEventListener('DOMContentLoaded', startObserving, { once: true });
     }
+  }
+
+  /**
+   * Listens for clicks on Google Calendar's native Settings gear button
+   * to immediately inject "🎓 Ajustes de Curso" into the dropdown menu as it renders.
+   */
+  private setupSettingsMenuInterception(): void {
+    const handleGearClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const isGear = Boolean(
+        target.closest(
+          'header button[aria-label*="Configuración" i], header button[aria-label*="Settings" i], header [role="button"][aria-label*="Configuración" i], header [role="button"][aria-label*="Settings" i], button[jsname="j6uSdc"]'
+        )
+      );
+
+      if (isGear) {
+        // Retry dynamically while Google Calendar asynchronously animates the popup menu into the DOM
+        for (const delay of [30, 80, 160, 300, 500]) {
+          setTimeout(() => this.injectSettingsMenuItemIfMenuOpen(), delay);
+        }
+      }
+    };
+
+    window.addEventListener('click', handleGearClick, true);
+
+    const prevRemover = this.removeEventListeners;
+    this.removeEventListeners = () => {
+      if (prevRemover) prevRemover();
+      window.removeEventListener('click', handleGearClick, true);
+    };
+  }
+
+  /**
+   * Injects "🎓 Ajustes de Curso" directly inside Google Calendar's native
+   * settings gear popup menu alongside "Configuración", "Papelera", etc.
+   */
+  public injectSettingsMenuItemIfMenuOpen(): boolean {
+    if (typeof document === 'undefined') return false;
+
+    const existingCustomItem = document.getElementById('gcal-academic-settings-menuitem');
+    if (existingCustomItem && document.body.contains(existingCustomItem)) {
+      return true;
+    }
+
+    // Google Calendar menus use [role="menu"] or class .JPdR6b, .goog-menu, .MocG8c
+    const menus = Array.from(document.querySelectorAll<HTMLElement>('[role="menu"], .JPdR6b, .goog-menu'));
+    for (const menu of menus) {
+      if (menu.style.display === 'none' || (menu.offsetWidth === 0 && menu.offsetHeight === 0)) continue;
+
+      const items = Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"], .goog-menuitem, .JAPqpe'));
+      if (items.length === 0) continue;
+
+      // Identify if this is the Settings gear dropdown menu by looking for native items
+      const isSettingsMenu = items.some((item) => {
+        const txt = (item.textContent || '').toLowerCase();
+        return (
+          txt.includes('configuraci') ||
+          txt.includes('setting') ||
+          txt.includes('papelera') ||
+          txt.includes('trash') ||
+          txt.includes('densidad') ||
+          txt.includes('density') ||
+          txt.includes('imprimir') ||
+          txt.includes('print')
+        );
+      });
+
+      if (!isSettingsMenu) continue;
+
+      // Find the "Configuración" / "Settings" menuitem to place right after it
+      const configItem =
+        items.find((item) => {
+          const txt = (item.textContent || '').toLowerCase();
+          return txt.includes('configuraci') || txt.includes('setting');
+        }) || items[0];
+
+      if (!configItem) continue;
+
+      // Clone target item to replicate exact native Google styles, fonts, and layout
+      const customItem = configItem.cloneNode(true) as HTMLElement;
+      customItem.id = 'gcal-academic-settings-menuitem';
+      customItem.setAttribute('role', 'menuitem');
+      customItem.setAttribute('aria-label', 'Ajustes de Curso (AcademiCal)');
+      customItem.setAttribute('tabindex', '-1');
+
+      // Strip all native Google actions/delegation attributes to prevent triggering Google Settings
+      const stripActionAttributes = (el: HTMLElement) => {
+        el.removeAttribute('jsaction');
+        el.removeAttribute('jsname');
+        el.removeAttribute('data-action');
+        el.removeAttribute('data-value');
+        el.removeAttribute('data-href');
+        el.removeAttribute('href');
+      };
+      stripActionAttributes(customItem);
+      customItem.querySelectorAll<HTMLElement>('*').forEach(stripActionAttributes);
+
+      // Update text in text node while preserving internal icon structure
+      let textReplaced = false;
+      const nodeFilter = typeof NodeFilter !== 'undefined' ? NodeFilter.SHOW_TEXT : 4;
+      try {
+        const walk = document.createTreeWalker(customItem, nodeFilter);
+        let n: Node | null;
+        while ((n = walk.nextNode())) {
+          if (n.nodeValue && n.nodeValue.trim().length > 0) {
+            if (!textReplaced) {
+              n.nodeValue = '🎓 Ajustes de Curso';
+              textReplaced = true;
+            } else {
+              n.nodeValue = '';
+            }
+          }
+        }
+      } catch (_) {}
+
+      if (!textReplaced) {
+        customItem.textContent = '🎓 Ajustes de Curso';
+      }
+
+      // Add right-aligned subtle shortcut hint (Ctrl+,)
+      const shortcutBadge = document.createElement('span');
+      shortcutBadge.className = 'gcal-menu-shortcut-badge';
+      shortcutBadge.textContent = 'Ctrl+,';
+      shortcutBadge.style.cssText = `
+        margin-left: auto;
+        padding-left: 16px;
+        font-size: 11px;
+        font-weight: 500;
+        opacity: 0.6;
+        letter-spacing: 0.5px;
+        user-select: none;
+      `;
+      customItem.style.display = 'flex';
+      customItem.style.alignItems = 'center';
+      customItem.style.cursor = 'pointer';
+      customItem.appendChild(shortcutBadge);
+
+      // Intercept and halt ALL pointer/mouse events in the capture phase so Google never sees them
+      const handleAction = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        if (e.type === 'click') {
+          // Cleanly dismiss the native popup menu
+          const menuParent = customItem.closest<HTMLElement>('[role="menu"], .JPdR6b, .goog-menu') || menu;
+          if (menuParent) {
+            menuParent.style.display = 'none';
+          }
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
+
+          // Open AcademiCal settings in edit mode
+          OnboardingModal.getInstance().open(true);
+        }
+      };
+
+      ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach((evtType) => {
+        customItem.addEventListener(evtType, handleAction, true);
+      });
+
+      // Insert immediately following "Configuración"
+      if (configItem.nextSibling) {
+        configItem.parentNode?.insertBefore(customItem, configItem.nextSibling);
+      } else {
+        configItem.parentNode?.appendChild(customItem);
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   public destroy(): void {
@@ -509,6 +711,14 @@ export class AcademicPanel {
     if (this.headerTabsContainer && this.headerTabsContainer.parentNode) {
       this.headerTabsContainer.parentNode.removeChild(this.headerTabsContainer);
       this.headerTabsContainer = null;
+    }
+    const legacyBtn = document.getElementById('gcal-academic-settings-btn');
+    if (legacyBtn && legacyBtn.parentNode) {
+      legacyBtn.parentNode.removeChild(legacyBtn);
+    }
+    const customMenuItem = document.getElementById('gcal-academic-settings-menuitem');
+    if (customMenuItem && customMenuItem.parentNode) {
+      customMenuItem.parentNode.removeChild(customMenuItem);
     }
     AcademicPanel.instance = null;
   }

@@ -65,6 +65,16 @@ export function setupTray(mainWindow: BrowserWindow): Tray {
     },
     { type: 'separator' },
     {
+      label: '🎓 Configurar Asignaturas y Paleta...',
+      click: () => {
+        if (!mainWindow.isVisible()) mainWindow.show();
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+        mainWindow.webContents.send('open-academic-settings');
+      }
+    },
+    { type: 'separator' },
+    {
       label: 'Salir',
       click: () => {
         setIsQuitting(true);

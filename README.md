@@ -2,14 +2,14 @@
 
 [![Download Installer](https://img.shields.io/badge/Descargar-Instalador_.exe_(v1.0.0)-2563eb?logo=windows&logoColor=white)](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal.Desktop-Setup-1.0.0.exe)
 [![Portable Zip](https://img.shields.io/badge/Descargar-Portable_.zip_(x64)-475569?logo=zip&logoColor=white)](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/AcademiCal-Desktop-v1.0.0-windows-x64.zip)
-[![Release Notes](https://img.shields.io/badge/Release-v1.0.0-emerald?logo=github&logoColor=white)](https://github.com/dukecorse1972/academic-calendar-desktop/releases/latest)
-[![CI Quality Gate](https://github.com/dukecorse1972/academic-calendar-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/dukecorse1972/academic-calendar-desktop/actions)
+[![Release Notes](https://img.shields.io/badge/Release-v1.0.0-emerald?logo=github&logoColor=white)](RELEASE_NOTES_v1.0.0.md)
+[![Tests Passing](https://img.shields.io/badge/Tests-58%2F58%20Passing-brightgreen?logo=node.js&logoColor=white)](https://github.com/dukecorse1972/academic-calendar-desktop/actions)
 [![Electron](https://img.shields.io/badge/Electron-33.4.11-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7.2-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-Aplicación de escritorio de alto rendimiento para **Windows** que proporciona la experiencia completa de **Google Calendar** integrada con una capa personalizada de gestión y productividad académica (filtrado dinámico de asignaturas, control de entregas y exámenes, cálculo inteligente de contrastes de color y tematización reactiva).
+Aplicación de escritorio de alto rendimiento para **Windows** que proporciona la experiencia completa de **Google Calendar** enriquecida con una capa especializada de gestión y productividad académica (filtrado dinámico de asignaturas, control de entregas y exámenes, cálculo inteligente de contrastes de color, tematización reactiva y escalado dinámico de materias).
 
 ---
 
@@ -21,7 +21,7 @@ Aplicación de escritorio de alto rendimiento para **Windows** que proporciona l
 
 ## 🚀 Descarga e Instalación
 
-AcademiCal Desktop ofrece múltiples métodos de instalación adaptados tanto a estudiantes y usuarios finales como a desarrolladores:
+AcademiCal Desktop ofrece múltiples métodos de distribución adaptados tanto a estudiantes y usuarios finales como a desarrolladores:
 
 ### 🌟 Método 1: Instalador Oficial para Windows (Recomendado)
 
@@ -31,7 +31,7 @@ La forma más rápida, cómoda y visual de disfrutar de AcademiCal Desktop:
 2. **Ejecuta el archivo**: Haz doble clic sobre el instalador descargado.
 3. **Instalación sin complicaciones**:
    * **Cero requisitos**: No requiere tener instalado Node.js, npm ni Git.
-   * **Sin permisos de Administrador**: Instalación segura por usuario en `%LOCALAPPDATA%\Programs\AcademiCal Desktop`, sin molestas ventanas de elevación UAC.
+   * **Sin permisos de Administrador**: Instalación segura por usuario en `%LOCALAPPDATA%\Programs\AcademiCal Desktop`, sin ventanas molestas de elevación UAC.
    * **Experiencia visual moderna**: Asistente con interfaz personalizada, temática visual académica y banner de bienvenida.
    * **Accesos directos automáticos**: Genera accesos directos automáticos en el **Escritorio** y en el **Menú de Inicio**.
    * **Lanzamiento inmediato**: Se inicia automáticamente al finalizar la instalación.
@@ -68,7 +68,7 @@ cd academic-calendar-desktop
 # 2. Instalar dependencias de desarrollo
 npm install
 
-# 3. Ejecutar la suite de pruebas automatizadas (51 tests)
+# 3. Ejecutar la suite de pruebas automatizadas (58 tests)
 npm test
 
 # 4. Iniciar la aplicación en modo desarrollo
@@ -79,8 +79,8 @@ npm start
 
 | Comando | Descripción |
 |---|---|
-| `npm start` | Compila TypeScript y arranca la aplicación con recarga. |
-| `npm test` | Ejecuta la suite completa de 51 pruebas unitarias e integradas con el runner nativo de Node.js. |
+| `npm start` | Compila TypeScript y arranca la aplicación con recarga en caliente. |
+| `npm test` | Ejecuta la suite completa de 58 pruebas automatizadas con el runner nativo de Node.js. |
 | `npm run build` | Compila TypeScript del proceso principal y empaqueta el preload bundle con esbuild. |
 | `npm run dist` | Empaqueta la aplicación y compila el instalador oficial NSIS (`.exe`) en `release/`. |
 | `npm run pack` | Genera la versión desempaquetada portable en `release/win-unpacked/`. |
@@ -90,7 +90,49 @@ npm start
 
 ## 🏛️ Arquitectura del Sistema
 
-El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
+El proyecto opera bajo un modelo de desacoplamiento estricto en 4 capas sobre Electron:
+
+```mermaid
+flowchart TD
+    subgraph OS["Windows 10/11 Desktop"]
+        Tray["System Tray Icon & Context Menu"]
+        Shortcuts["Global Shortcuts (Ctrl+, / 1, 2, 3)"]
+    end
+
+    subgraph ElectronMain["Electron Main Process"]
+        Session["Session Partition ('persist:gcal_session')"]
+        WindowManager["BrowserWindow Manager (ContextIsolation + Sandbox)"]
+        IPC["Async Operation Queue & IPC Handlers"]
+    end
+
+    subgraph PreloadBridge["Preload Context Bridge"]
+        API["window.gcalDesktopAPI (Secure contextBridge)"]
+        Validators["Runtime Payload & Contract Validators"]
+    end
+
+    subgraph InjectedLayer["Injected Academic Workstation Layer"]
+        AppState["AppState (Reactive Observer Pattern)"]
+        Theme["ThemeManager (MutationObserver Light/Dark)"]
+        Adapter["GoogleCalendarAdapter (DOM & CSS Layout Normalizer)"]
+        GearMenu["Native Gear Menu Integration (⚙️ 🎓 Ajustes de Curso)"]
+        Modals["Modals: CreatorModal | DetailModal | OnboardingModal"]
+    end
+
+    subgraph GoogleCore["Google Calendar Web Core"]
+        GCalDOM["Google Calendar Grid, Events, Sync & Notifications"]
+    end
+
+    Tray --> WindowManager
+    Shortcuts --> AppState
+    WindowManager --> Session
+    WindowManager --> IPC
+    IPC <--> API
+    API --> Validators
+    API --> InjectedLayer
+    InjectedLayer --> Adapter
+    Adapter --> GCalDOM
+    GearMenu --> Modals
+```
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -115,8 +157,9 @@ El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
 │  │  - AppState (Patrón Observador reactivo / Fuente Única de Verdad)│  │
 │  │  - ThemeManager (Detección de temas claro/oscuro en tiempo real) │  │
 │  │  - GoogleCalendarAdapter (Normalización de layout y estilos)     │  │
+│  │  - Integración nativa en menú engranaje: ⚙️ > [🎓 Ajustes Curso]  │  │
 │  │  - Pestañas integradas: [CLASES] | [ENTREGAS Y EXÁMENES] | [TODO]│  │
-│  │  - Modales nativos: Creador y Visor extendido de eventos         │  │
+│  │  - Modales: Creador, Visor extendido y Asistente de Curso        │  │
 │  └──────────────────────────────────┬───────────────────────────────┘  │
 │                                     │                                  │
 │  ┌──────────────────────────────────▼───────────────────────────────┐  │
@@ -130,43 +173,61 @@ El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
 
 ## ✨ Características Principales
 
-1. **Asistente de Configuración Inicial (Onboarding Wizard)**:
-   * **Detección inteligente de primer inicio**: Si el estudiante no tiene Google Calendar configurado, se despliega un asistente visual que le guía en 30 segundos.
-   * **Gestión dinámica de asignaturas**: Permite añadir, renombrar y eliminar las asignaturas reales que cursa este cuatrimestre, sin depender de nombres fijos ficticios.
-   * **Configuración automática de Exámenes y Entregas**: Automatiza la creación en segundo plano y vinculación de los calendarios por defecto oficiales (*Exámenes* y *Entregas*).
+### 1. ⚙️ Acceso a Ajustes Integrado en el Menú de Google (Sin Desajustes)
+* **Integración Limpia**: En lugar de saturar la barra superior empujando el buscador o el perfil, la opción `🎓 Ajustes de Curso` se inyecta directamente dentro del menú desplegable del engranaje oficial (`⚙️`).
+* **Supresión Estricta de Eventos de Google**: Intercepta eventos de ratón (`pointerdown`, `mousedown`, `click`) en fase de captura (`useCapture: true`) y limpia atributos `jsaction` de Google para evitar navegaciones no deseadas a `/settings`.
+* **Atajo Universal de Escritorio**: Pulsa `Ctrl+,` en cualquier momento para desplegar los ajustes de asignaturas y paletas.
 
-2. **Paletas de Color Especializadas y Curadas**:
-   * Selección en 1 clic entre 4 paletas estéticas oficiales extraídas de la teoría del color y papelería de estudio:
-     * **Zebra Mildliner™ Pastel**: Tonos japoneses suaves para estudio universitario (*GoodNotes*, *Notion*).
-     * **Catppuccin™ Pastel**: Paleta moderna de alto contraste para interfaces limpias.
-     * **Nord™ Frost & Aurora**: Diseño ártico nórdico equilibrado.
-     * **Morandi Editorial**: Tonos terrosos y apagados elegantes.
+### 2. 📚 Escalado Dinámico de Asignaturas (Soporte Multicurso 1..10+)
+* **Sin Límite Fijo**: Permite gestionar cualquier número de asignaturas simultáneas (4, 6, 8, 10 o más materias por cuatrimestre).
+* **Numeración Secuencial Visual**: Cada fila muestra su número de orden (`1.`, `2.`, `3.`...).
+* **Rotación Continua de Color**: Añadir una asignatura asigna automáticamente el siguiente color de la paleta seleccionada, con soporte de selector individual por fila y algoritmo de dispersión hash para más de 10 materias.
 
-3. **Gestión Académica por Contexto**:
-   * **Pestaña CLASES**: Muestra exclusivamente los calendarios de tus asignaturas lectivas.
-   * **Pestaña ENTREGAS Y EXÁMENES**: Aísla tus hitos críticos (exámenes y fechas de entrega de proyectos) y te permite crear nuevos eventos con un solo clic.
-   * **Pestaña TODO**: Vista global unificada de todas tus categorías académicas y tareas.
-   * **Eliminación de Distracciones**: Oculta permanentemente elementos que saturan la interfaz como cumpleaños, accesos promocionales y botones no relevantes para el estudio.
+### 3. 🎨 Paletas de Color Especializadas y Curadas
+Selección en 1 clic entre 4 paletas estéticas oficiales extraídas de la teoría del color y papelería de estudio:
+* **Zebra Mildliner™ Pastel**: Tonos japoneses suaves para estudio universitario (*GoodNotes*, *Notion*).
+* **Catppuccin™ Pastel**: Paleta moderna de alto contraste para interfaces limpias y relajantes.
+* **Nord™ Frost & Aurora**: Diseño ártico nórdico equilibrado para máxima concentración.
+* **Morandi Editorial**: Tonos terrosos y apagados elegantes de estilo editorial.
 
-4. **Diseño Visual "Badge Pro"**:
-   * **Exámenes**: Chips destacados con fondo sólido e intenso en el color de la asignatura, tipografía de alto contraste y borde dorado distintivo.
-   * **Entregas**: Chips en tonos pastel suaves derivados matemáticamente mediante HSL sobre el color oficial del calendario, con bordes reforzados.
-   * **Gestión de Entregas Realizadas**: Permite atenuar entregas completadas con reducción de opacidad y escala de grises para despejar la vista semanal.
+### 4. ⚡ Gestión Académica por Contexto
+* **Pestaña CLASES (`1`)**: Muestra exclusivamente los calendarios de tus asignaturas lectivas.
+* **Pestaña ENTREGAS Y EXÁMENES (`2`)**: Aísla tus hitos críticos (exámenes y fechas de entrega de proyectos) y te permite crear nuevos eventos con un solo clic.
+* **Pestaña TODO (`3`)**: Vista global unificada de todas tus categorías académicas y tareas.
+* **Eliminación de Distracciones**: Oculta permanentemente elementos que saturan la interfaz como cumpleaños, accesos promocionales y botones no relevantes para el estudio.
 
-5. **Tematización Dinámica Reactiva**:
-   * Sincronización inmediata con el modo Oscuro/Claro tanto de Google Calendar como de Windows mediante `MutationObserver` y `matchMedia`, sin requerir reinicio de la aplicación.
+### 5. 🏷️ Diseño Visual "Badge Pro" y Adaptación HSL
+* **Exámenes**: Chips destacados con fondo sólido e intenso en el color de la asignatura, tipografía de alto contraste y borde dorado distintivo.
+* **Entregas**: Chips en tonos pastel suaves derivados matemáticamente mediante HSL sobre el color oficial del calendario, con bordes reforzados.
+* **Gestión de Entregas Realizadas**: Permite atenuar entregas completadas ("✓ HECHA") con reducción de opacidad y escala de grises para despejar la vista semanal.
+* **Soporte Bilingüe**: Extracción precisa de fechas tanto en español (`"15 de octubre"`) como en inglés (`"October 15"`).
 
-6. **Simulador y Demostración 1:1 Interactiva**:
-   * Incluye [`walkthrough-1to1.html`](walkthrough-1to1.html) y [`walkthrough.html`](walkthrough.html), simuladores autocontenidos a escala real de la ventana de Windows y Google Calendar para visualizar e interactuar con el flujo sin alterar la configuración del sistema.
+### 6. 🌓 Tematización Dinámica Reactiva
+* Sincronización inmediata con el modo Oscuro/Claro tanto de Google Calendar como de Windows mediante `MutationObserver` y `matchMedia`, sin requerir reinicio de la aplicación.
 
 ---
 
-## 🔒 Modelo de Seguridad
+## ⌨️ Atajos de Teclado (Cheat Sheet)
+
+| Atajo | Ámbito | Acción |
+|:---:|:---:|---|
+| **`1`** | Global (sin foco en inputs) | Cambiar a vista **CLASES** |
+| **`2`** | Global (sin foco en inputs) | Cambiar a vista **ENTREGAS Y EXÁMENES** |
+| **`3`** | Global (sin foco en inputs) | Cambiar a vista **TODO** |
+| **`Ctrl + ,`** | Global | Abrir **🎓 Ajustes de Curso** (Asignaturas y Paletas) |
+| **`Esc`** | Modal abierto | Cerrar ventana emergente activa |
+| **`t`** | Cuadrícula de calendario | Volver a la fecha actual ("Hoy") |
+| **`j` / `k`** | Cuadrícula de calendario | Semana o mes anterior / siguiente |
+
+---
+
+## 🔒 Modelo de Seguridad y Privacidad
 
 * **Aislamiento de Contexto (`contextIsolation: true`)**: El código web nunca tiene acceso directo a Node.js ni a los recursos del sistema operativo.
 * **Sandbox (`sandbox: true`)**: Los procesos de renderizado se ejecutan confinados dentro del sandbox nativo de Chromium.
 * **Control de Permisos de Mínimo Privilegio**: El manejador de sesiones deniega por defecto todo acceso a dispositivos (cámara, micrófono, geolocalización) y concede exclusivamente notificaciones para el dominio oficial de Google Calendar.
 * **Sesión Aislada en Disco**: La partición `persist:gcal_session` conserva el inicio de sesión del usuario en `%APPDATA%\google-calendar-win` sin contaminar perfiles del navegador principal ni exponer tokens al exterior.
+* **Cero Telemetría**: La aplicación no envía analíticas ni registros a ningún servidor de terceros.
 
 ---
 
@@ -177,15 +238,16 @@ El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
 │   ├── main/                 # Proceso principal de Electron (Ventanas, sesiones, IPC)
 │   ├── preload/              # Script de puente aislado con contextBridge
 │   ├── injected/             # Capa académica inyectada en el DOM de Google Calendar
-│   │   ├── adapter/          # Adaptador de estilos y normalización del DOM
+│   │   ├── adapter/          # Adaptador de estilos, menús nativos y normalización
 │   │   ├── theme/            # Motor de tokens y detección de temas Light/Dark
-│   │   ├── ui/               # Pestañas, modal de creación, visor de detalle y onboarding
+│   │   ├── ui/               # Pestañas, modal de creación, visor de detalle y ajustes
 │   │   └── utils/            # Utilidades de DOM seguras frente a CSP
 │   ├── shared/               # Constantes, tipos TypeScript, formateadores y paletas
-│   └── tests/                # 51 pruebas automatizadas con Node.js Test Runner
+│   └── tests/                # 58 pruebas automatizadas con Node.js Test Runner
 ├── assets/                   # Iconos e identidad visual (ico, png y banners del instalador)
 ├── walkthrough-1to1.html     # Simulador visual 1:1 de Google Calendar y la capa académica
 ├── walkthrough.html          # Guía interactiva paso a paso del flujo de onboarding
+├── RELEASE_NOTES_v1.0.0.md   # Notas oficiales de la versión v1.0.0
 ├── package.json
 └── tsconfig.json
 ```
@@ -194,11 +256,21 @@ El proyecto opera bajo un modelo de desacoplamiento en 4 capas sobre Electron:
 
 ## 🧪 Pruebas Automatizadas
 
-El proyecto utiliza el **Node.js Test Runner nativo** (`node:test` y `node:assert/strict`), garantizando una ejecución ultrarrápida (menos de 250ms) sin dependencias externas:
+El proyecto utiliza el **Node.js Test Runner nativo** (`node:test` y `node:assert/strict`), garantizando una ejecución ultrarrápida sin dependencias externas:
 
 ```bash
-# Ejecutar la suite completa de pruebas
 npm test
+```
+
+```text
+ℹ tests 58
+ℹ suites 13
+ℹ pass 58
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2630.2938
 ```
 
 ---

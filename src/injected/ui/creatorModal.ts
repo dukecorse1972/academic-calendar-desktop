@@ -162,7 +162,7 @@ export class CreatorModal {
     const defaultEndHour = String((now.getHours() + 3) % 24).padStart(2, '0') + ':00';
 
     const detectedClasses = GoogleCalendarAdapter.getInstance().getDetectedClasses();
-    this.selectedSubject = detectedClasses[0] || '🖥️ Fundamentos de los Computadores';
+    this.selectedSubject = detectedClasses[0] || 'Asignatura 1';
 
     safeSetInnerHTML(
       this.modalOverlay,

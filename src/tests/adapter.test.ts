@@ -244,6 +244,29 @@ describe('6. Academic Event Extended View (Detail Modal)', () => {
     modal.close();
   });
 
+  test('Accurately parses English date format without falling back to today', () => {
+    const fakeChip = {
+      getAttribute: (attr: string) => {
+        if (attr === 'aria-label') {
+          return 'From 10:00 to 12:00, [EXAMEN] Mathematics - Final Exam, Calendar: Exams, October 15, 2026';
+        }
+        if (attr === 'data-eventid') return 'evt_en_123';
+        return null;
+      },
+      querySelector: () => null,
+      innerText: 'Final Exam'
+    } as any;
+
+    const detail = modal.parseChipData(fakeChip);
+    assert.equal(detail.type, 'EXAMEN');
+    assert.equal(detail.title, 'Final Exam');
+    assert.equal(detail.subject, 'Mathematics');
+    assert.equal(detail.startTime, '10:00');
+    assert.equal(detail.endTime, '12:00');
+    assert.equal(detail.isoDate, '2026-10-15');
+    assert.ok(detail.dateStr.includes('15 de Octubre de 2026'));
+  });
+
   test('Modal toolbar button "Quitar del todo" is hidden when entrega is not completed, and shown when completed', () => {
     // Setup mock document for render
     const mockOverlay: any = {

@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { initCustomLayer } from '../injected/index';
 import { AppState } from '../injected/state';
+import { OnboardingModal } from '../injected/ui/onboardingModal';
 
 const desktopApi = {
   createAcademicEventBackground: (payload: any) =>
@@ -53,5 +54,14 @@ ipcRenderer.on('switch-academic-tab', (_event, tab: any) => {
     }
   } catch (err) {
     console.error('[Preload] Error switching tab from tray:', err);
+  }
+});
+
+// 6. Listen for settings open signal from system tray
+ipcRenderer.on('open-academic-settings', () => {
+  try {
+    OnboardingModal.getInstance().open(true);
+  } catch (err) {
+    console.error('[Preload] Error opening academic settings from tray:', err);
   }
 });

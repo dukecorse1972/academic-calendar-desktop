@@ -12,6 +12,7 @@ export class OnboardingModal {
   private modalOverlay: HTMLElement | null = null;
   private selectedPaletteId: string = 'mildliner';
   private escHandler: ((e: KeyboardEvent) => void) | null = null;
+  private isEditMode: boolean = false;
   private subjects: SubjectConfig[] = [
     { name: 'Matemáticas', color: '#98D5E8' },
     { name: 'Física', color: '#A1D0CA' },
@@ -57,7 +58,8 @@ export class OnboardingModal {
     });
   }
 
-  public open(): void {
+  public open(isEditMode: boolean = false): void {
+    this.isEditMode = isEditMode;
     this.loadFromStorage();
     if (this.modalOverlay) {
       this.modalOverlay.remove();
@@ -145,13 +147,13 @@ export class OnboardingModal {
               letter-spacing: 0.5px;
               margin-bottom: 8px;
             ">
-              <span>🎓</span> <span>BIENVENIDO A ACADEMICAL</span>
+              <span>🎓</span> <span>${this.isEditMode ? '⚙️ AJUSTES DE CURSO' : 'BIENVENIDO A ACADEMICAL'}</span>
             </div>
             <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: var(--gcal-text, #1f1f1f);">
-              Configuración Inicial de tu Curso
+              ${this.isEditMode ? 'Personalizar Asignaturas y Paleta' : 'Configuración Inicial de tu Curso'}
             </h2>
             <p style="margin: 4px 0 0 0; font-size: 13.5px; color: var(--gcal-secondary-text, #5f6368); line-height: 1.45;">
-              Personaliza tus asignaturas con paletas de color estéticas y exclusivas para organizar tus exámenes y entregas automáticamente.
+              ${this.isEditMode ? 'Modifica tus asignaturas de este cuatrimestre y su paleta de color para actualizar la vista semanal instantáneamente.' : 'Personaliza tus asignaturas con paletas de color estéticas y exclusivas para organizar tus exámenes y entregas automáticamente.'}
             </p>
           </div>
           <button id="gcal-onboarding-close" type="button" style="
@@ -286,7 +288,7 @@ export class OnboardingModal {
             font-weight: 600;
             font-size: 13px;
             cursor: pointer;
-          ">Omitir por ahora</button>
+          ">${this.isEditMode ? 'Cerrar' : 'Omitir por ahora'}</button>
 
           <button id="gcal-onboarding-submit" type="button" style="
             padding: 10px 24px;
@@ -302,7 +304,7 @@ export class OnboardingModal {
             gap: 8px;
             box-shadow: 0 3px 8px rgba(26, 115, 232, 0.35);
           ">
-            <span>Comenzar con AcademiCal ➔</span>
+            <span>${this.isEditMode ? 'Guardar Cambios ✓' : 'Comenzar con AcademiCal ➔'}</span>
           </button>
         </div>
       </div>
@@ -325,6 +327,16 @@ export class OnboardingModal {
           border-radius: 10px;
           padding: 6px 10px;
         ">
+          <!-- Subject Index Badge -->
+          <span style="
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gcal-secondary-text, #5f6368);
+            width: 18px;
+            text-align: right;
+            user-select: none;
+          ">${index + 1}.</span>
+
           <!-- Color picker / circle -->
           <div style="position: relative;">
             <button type="button" class="gcal-subj-color-dot" data-index="${index}" style="
@@ -561,7 +573,7 @@ export class OnboardingModal {
     adapter.enhanceAcademicChips();
 
     // 4. Show success toast
-    this.showToast('✓ ¡Asignaturas y paleta configuradas correctamente!');
+    this.showToast(this.isEditMode ? '✓ ¡Asignaturas y paleta actualizadas correctamente!' : '✓ ¡Asignaturas y paleta configuradas correctamente!');
 
     // 5. Close modal
     this.close();

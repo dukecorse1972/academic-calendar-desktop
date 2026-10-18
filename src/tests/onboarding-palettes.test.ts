@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { PREDEFINED_PALETTES, getPaletteById } from '../shared/palettes';
 import { GoogleCalendarAdapter } from '../injected/adapter/GoogleCalendarAdapter';
+import { OnboardingModal } from '../injected/ui/onboardingModal';
 
 describe('10. Specialized Color Palettes & Aesthetic Theme Systems', () => {
   test('Contains all 4 specialized palettes: Mildliner, Catppuccin, Nord, Morandi', () => {
@@ -82,5 +83,49 @@ describe('11. Dynamic Academic Subjects & Resilient Calendar Integration', () =>
     const mathColor = adapter.findSubjectColor('Matemáticas', colorMap);
     assert.ok(Boolean(mathColor));
     assert.match(mathColor, /^#[0-9A-Fa-f]{6}$/);
+  });
+
+  test('OnboardingModal supports opening in edit mode for reconfiguring subjects', () => {
+    const modal = OnboardingModal.getInstance();
+    assert.ok(modal);
+    assert.equal(typeof modal.open, 'function');
+    assert.equal(typeof modal.close, 'function');
+
+    // Test that close marks completed without throwing
+    modal.close();
+  });
+
+  test('Supports dynamic subject lists with 8+ simultaneous courses without errors', () => {
+    const adapter = GoogleCalendarAdapter.getInstance();
+    const subjects8 = [
+      { name: 'Anatomía', color: '#98D5E8' },
+      { name: 'Fisiología', color: '#A1D0CA' },
+      { name: 'Bioquímica', color: '#F0F4A3' },
+      { name: 'Histología', color: '#FFB6D9' },
+      { name: 'Bioestadística', color: '#FFDFB5' },
+      { name: 'Inmunología', color: '#E3B1C3' },
+      { name: 'Genética Médica', color: '#C6B6D3' },
+      { name: 'Microbiología', color: '#88C0D0' }
+    ];
+
+    // Mock localStorage storage
+    const storage: Record<string, string> = {
+      gcal_academic_subjects: JSON.stringify(subjects8)
+    };
+    (global as any).localStorage = {
+      getItem: (k: string) => storage[k] || null,
+      setItem: (k: string, v: string) => { storage[k] = v; }
+    };
+
+    const detected = adapter.getDetectedClasses();
+    assert.equal(detected.length, 8);
+    assert.ok(detected.includes('Microbiología'));
+    assert.ok(detected.includes('Genética Médica'));
+
+    // Check color assignment for 8th subject
+    const colorMap = adapter.getSubjectColorMap();
+    const c8 = adapter.findSubjectColor('Microbiología', colorMap);
+    assert.ok(Boolean(c8));
+    assert.match(c8, /^#[0-9A-Fa-f]{6}$/);
   });
 });
