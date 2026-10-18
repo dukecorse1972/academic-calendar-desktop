@@ -74,7 +74,9 @@ function setupBackgroundEventCreation(customSession: Session): void {
             'button[data-action="save"]',
             'button[aria-label*="Guardar" i]',
             'button[aria-label*="Save" i]',
-            '[role="button"][aria-label*="Guardar" i]'
+            '[role="button"][aria-label*="Guardar" i]',
+            '[role="button"][aria-label*="Save" i]',
+            'div[role="button"][jsaction*="save" i]'
           ];
 
           while (Date.now() - startTime < 12000) {
@@ -175,8 +177,12 @@ function setupBackgroundEventCreation(customSession: Session): void {
               'button[data-action="delete"]',
               'button[aria-label*="Eliminar evento" i]',
               'button[aria-label*="Delete event" i]',
+              'button[aria-label*="Eliminar" i]',
+              'button[aria-label*="Delete" i]',
               '[role="button"][aria-label*="Eliminar evento" i]',
-              '[role="button"][aria-label*="Delete event" i]'
+              '[role="button"][aria-label*="Delete event" i]',
+              '[role="button"][aria-label*="Eliminar" i]',
+              '[role="button"][aria-label*="Delete" i]'
             ];
             for (const sel of deleteSelectors) {
               const btn = document.querySelector(sel);
@@ -318,7 +324,9 @@ function setupBackgroundEventCreation(customSession: Session): void {
             'button[data-action="save"]',
             'button[aria-label*="Guardar" i]',
             'button[aria-label*="Save" i]',
-            '[role="button"][aria-label*="Guardar" i]'
+            '[role="button"][aria-label*="Guardar" i]',
+            '[role="button"][aria-label*="Save" i]',
+            'div[role="button"][jsaction*="save" i]'
           ];
 
           while (Date.now() - startTime < 12000) {
@@ -390,8 +398,12 @@ function setupBackgroundEventCreation(customSession: Session): void {
                 'button[data-action="delete"]',
                 'button[aria-label*="Eliminar evento" i]',
                 'button[aria-label*="Delete event" i]',
+                'button[aria-label*="Eliminar" i]',
+                'button[aria-label*="Delete" i]',
                 '[role="button"][aria-label*="Eliminar evento" i]',
-                '[role="button"][aria-label*="Delete event" i]'
+                '[role="button"][aria-label*="Delete event" i]',
+                '[role="button"][aria-label*="Eliminar" i]',
+                '[role="button"][aria-label*="Delete" i]'
               ];
               for (const sel of deleteSelectors) {
                 const btn = document.querySelector(sel);
@@ -497,6 +509,29 @@ function setupBackgroundEventCreation(customSession: Session): void {
         : ['Exámenes', 'Entregas'];
 
       for (const calName of namesToCreate) {
+        // Prevent duplicate creation: check if calendar already exists in active mainWindow DOM
+        let alreadyExists = false;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          try {
+            alreadyExists = await mainWindow.webContents.executeJavaScript(`(() => {
+              const target = ${JSON.stringify(calName.toLowerCase().trim())};
+              const items = Array.from(document.querySelectorAll('span, div[title], [role="checkbox"], [role="treeitem"]'));
+              return items.some(el => {
+                const text = (el.textContent || '').trim().toLowerCase();
+                const title = (el.getAttribute('title') || '').trim().toLowerCase();
+                const label = (el.getAttribute('aria-label') || '').trim().toLowerCase();
+                return text === target || title === target || label === target ||
+                       text.startsWith(target) || title.startsWith(target) || label.startsWith(target);
+              });
+            })()`);
+          } catch (_) {}
+        }
+
+        if (alreadyExists) {
+          console.log(`[EnsureAcademicCalendars] Secondary calendar "${calName}" already exists. Skipping duplicate creation.`);
+          continue;
+        }
+
         const bgWindow = new BrowserWindow({
           show: false,
           width: 1024,

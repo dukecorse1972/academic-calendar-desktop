@@ -156,7 +156,7 @@ export class AcademicDetailModal {
 
     // 1. Type
     let type: 'EXAMEN' | 'ENTREGA' = 'EXAMEN';
-    if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra/i.test(allText)) {
+    if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|deadline|assignment|due/i.test(allText)) {
       type = 'ENTREGA';
     }
 
@@ -286,13 +286,15 @@ export class AcademicDetailModal {
         }
       }
       if (!subject) {
-        if (cleanAll.includes('computador')) subject = 'Computadores';
-        else if (cleanAll.includes('programac')) subject = 'Programación';
-        else if (cleanAll.includes('econom')) subject = 'Economía';
-        else if (cleanAll.includes('derech')) subject = 'Derecho';
-        else if (cleanAll.includes('matemat')) subject = 'Matemáticas';
-        else if (cleanAll.includes('market')) subject = 'Márketing';
-        else subject = 'Asignatura General';
+        for (const [key] of colorMap.entries()) {
+          if (key.length >= 3 && cleanAll.includes(key)) {
+            subject = key.charAt(0).toUpperCase() + key.slice(1);
+            break;
+          }
+        }
+        if (!subject) {
+          subject = 'Asignatura General';
+        }
       }
     }
     if (!title) title = 'Evento Académico';

@@ -13,6 +13,8 @@ export class OnboardingModal {
   private selectedPaletteId: string = 'mildliner';
   private escHandler: ((e: KeyboardEvent) => void) | null = null;
   private isEditMode: boolean = false;
+  private hideBirthdays: boolean = true;
+  private showOtherCalendars: boolean = false;
   private subjects: SubjectConfig[] = [
     { name: 'Matemáticas', color: '#98D5E8' },
     { name: 'Física', color: '#A1D0CA' },
@@ -47,6 +49,10 @@ export class OnboardingModal {
       } else {
         this.applyPaletteColorsToSubjects();
       }
+      const storedBirthdays = localStorage.getItem('gcal_hide_birthdays');
+      this.hideBirthdays = storedBirthdays === null ? true : storedBirthdays !== 'false';
+      const storedOtherCalendars = localStorage.getItem('gcal_show_other_calendars');
+      this.showOtherCalendars = storedOtherCalendars === 'true';
     } catch (_) {}
   }
 
@@ -259,9 +265,34 @@ export class OnboardingModal {
             <span>⚡</span> <span>3. Calendarios Académicos Predeterminados</span>
           </div>
           <div style="font-size: 12px; color: var(--gcal-secondary-text, #5f6368); line-height: 1.45;">
-            Se configurarán automáticamente los destinos oficiales:
+            Tus asignaturas clasifican y colorean cada evento. Además, se integran en los calendarios oficiales de destino:
             <span style="font-weight: 600; color: var(--gcal-text, #1f1f1f);">📋 Exámenes</span> (para parciales y finales) y
-            <span style="font-weight: 600; color: var(--gcal-text, #1f1f1f);">🗓️ Entregas</span> (para proyectos y prácticas).
+            <span style="font-weight: 600; color: var(--gcal-text, #1f1f1f);">🗓️ Entregas</span> (para proyectos, prácticas y deadlines).
+          </div>
+        </div>
+
+        <!-- Section 4: Visual Preferences -->
+        <div style="
+          background: var(--gcal-surface, #ffffff);
+          border: 1px solid var(--gcal-border, #dadce0);
+          border-radius: 12px;
+          padding: 12px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        ">
+          <label style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: var(--gcal-secondary-text, #5f6368);">
+            4. PREFERENCIAS DE VISUALIZACIÓN
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--gcal-text, #1f1f1f); cursor: pointer;">
+              <input type="checkbox" id="gcal-pref-hide-birthdays" ${this.hideBirthdays ? 'checked' : ''} style="cursor: pointer; accent-color: var(--gcal-accent, #1a73e8);" />
+              <span>Ocultar calendario de Cumpleaños (vista limpia y minimalista)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--gcal-text, #1f1f1f); cursor: pointer;">
+              <input type="checkbox" id="gcal-pref-show-other-calendars" ${this.showOtherCalendars ? 'checked' : ''} style="cursor: pointer; accent-color: var(--gcal-accent, #1a73e8);" />
+              <span>Mostrar sección 'Otros calendarios' (suscripciones externas, Moodle o festivos)</span>
+            </label>
           </div>
         </div>
 
@@ -525,6 +556,15 @@ export class OnboardingModal {
         this.subjects[idx].name = input.value.trim();
       }
     });
+
+    const hideBirthdaysCheckbox = this.modalOverlay.querySelector<HTMLInputElement>('#gcal-pref-hide-birthdays');
+    if (hideBirthdaysCheckbox) {
+      this.hideBirthdays = hideBirthdaysCheckbox.checked;
+    }
+    const showOtherCalCheckbox = this.modalOverlay.querySelector<HTMLInputElement>('#gcal-pref-show-other-calendars');
+    if (showOtherCalCheckbox) {
+      this.showOtherCalendars = showOtherCalCheckbox.checked;
+    }
   }
 
   private async handleSubmit(): Promise<void> {
@@ -549,6 +589,8 @@ export class OnboardingModal {
         localStorage.setItem('gcal_academic_onboarding_completed', 'true');
         localStorage.setItem('gcal_active_palette', this.selectedPaletteId);
         localStorage.setItem('gcal_academic_subjects', JSON.stringify(this.subjects));
+        localStorage.setItem('gcal_hide_birthdays', String(this.hideBirthdays));
+        localStorage.setItem('gcal_show_other_calendars', String(this.showOtherCalendars));
 
         // Save color mapping
         const colorMap: Record<string, string> = {};
@@ -559,16 +601,19 @@ export class OnboardingModal {
       } catch (_) {}
     }
 
-    // 2. Request background creation of secondary calendars in Google Calendar
+    // 2. Request background creation of secondary calendars in Google Calendar if not yet ensured
+    const calendarsEnsured = typeof localStorage !== 'undefined' && localStorage.getItem('gcal_academic_calendars_ensured') === 'true';
     const desktopApi = (typeof window !== 'undefined' ? (window as any).gcalDesktopAPI : null);
-    if (desktopApi && typeof desktopApi.ensureAcademicCalendarsBackground === 'function') {
+    if (!calendarsEnsured && desktopApi && typeof desktopApi.ensureAcademicCalendarsBackground === 'function') {
       try {
         desktopApi.ensureAcademicCalendarsBackground(['Exámenes', 'Entregas']);
+        localStorage.setItem('gcal_academic_calendars_ensured', 'true');
       } catch (_) {}
     }
 
     // 3. Update Adapter state immediately
     const adapter = GoogleCalendarAdapter.getInstance();
+    adapter.injectCleanLayoutStyles();
     adapter.tagCalendarRows();
     adapter.enhanceAcademicChips();
 

@@ -128,4 +128,38 @@ describe('11. Dynamic Academic Subjects & Resilient Calendar Integration', () =>
     assert.ok(Boolean(c8));
     assert.match(c8, /^#[0-9A-Fa-f]{6}$/);
   });
+
+  test('Visualization preferences: defaults preserve creator cleanliness (Zero Disruption)', () => {
+    const adapter = GoogleCalendarAdapter.getInstance();
+    
+    // Clear mock storage
+    const storage: Record<string, string> = {};
+    (global as any).localStorage = {
+      getItem: (k: string) => storage[k] || null,
+      setItem: (k: string, v: string) => { storage[k] = v; }
+    };
+
+    // By default, birthdays are hidden and other calendars are hidden
+    assert.equal(adapter.shouldHideBirthdays(), true, 'Birthdays must be hidden by default');
+    assert.equal(adapter.shouldShowOtherCalendars(), false, 'Other calendars must be hidden by default');
+
+    // When explicitly toggled by user in settings (Ctrl+,)
+    storage['gcal_hide_birthdays'] = 'false';
+    storage['gcal_show_other_calendars'] = 'true';
+    assert.equal(adapter.shouldHideBirthdays(), false, 'Birthdays should be visible when opted in');
+    assert.equal(adapter.shouldShowOtherCalendars(), true, 'Other calendars should be visible when opted in');
+  });
+
+  test('Dynamic subject resolution does not override custom subjects with hardcoded keywords', () => {
+    const adapter = GoogleCalendarAdapter.getInstance();
+    const customMap = new Map<string, string>([
+      ['arquitectura de computadores', '#112233'],
+      ['computadores y redes', '#445566']
+    ]);
+
+    // Should resolve exact matches directly from map
+    assert.equal(adapter.findSubjectColor('arquitectura de computadores', customMap), '#112233');
+    assert.equal(adapter.findSubjectColor('computadores y redes', customMap), '#445566');
+  });
 });
+

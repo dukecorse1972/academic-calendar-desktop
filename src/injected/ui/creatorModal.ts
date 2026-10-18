@@ -1043,7 +1043,12 @@ export class CreatorModal {
       }
 
       const adapter = GoogleCalendarAdapter.getInstance();
-      await adapter.createAcademicEvent(payload);
+      const ok = await adapter.createAcademicEvent(payload);
+
+      if (!ok) {
+        this.showError('No se pudo guardar el evento automáticamente en Google Calendar. Comprueba tu conexión o inténtalo de nuevo.');
+        return;
+      }
 
       // Guarantee tab remains ENTREGAS_EXAMENES
       appState.setActiveTab('ENTREGAS_EXAMENES');

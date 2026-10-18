@@ -375,7 +375,7 @@ export class AcademicPanel {
 
       const activeTab = AppState.getInstance().getState().activeTab;
       const hasCustomAcademic = Boolean(chip.querySelector('.custom-academic-container'));
-      const isAcademicText = /examen|entrega|entegra/i.test(chip.textContent || '');
+      const isAcademicText = /examen|exam|entrega|entegra|deadline|assignment|due/i.test(chip.textContent || '');
 
       if (activeTab === 'ENTREGAS_EXAMENES' || hasCustomAcademic || isAcademicText) {
         e.preventDefault();

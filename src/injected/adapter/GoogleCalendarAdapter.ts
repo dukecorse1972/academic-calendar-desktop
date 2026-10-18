@@ -51,13 +51,39 @@ export class GoogleCalendarAdapter {
    * - "Términos – Privacidad" footer links
    * Ensures clean native layout without gaps or misalignment.
    */
+  public shouldHideBirthdays(): boolean {
+    if (typeof localStorage === 'undefined') return true;
+    try {
+      return localStorage.getItem('gcal_hide_birthdays') !== 'false';
+    } catch {
+      return true;
+    }
+  }
+
+  public shouldShowOtherCalendars(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    try {
+      return localStorage.getItem('gcal_show_other_calendars') === 'true';
+    } catch {
+      return false;
+    }
+  }
+
   public injectCleanLayoutStyles(): void {
     const styleId = 'gcal-custom-clean-layout';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
+    let style = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
       style.id = styleId;
-      style.textContent = `
-        /* 1. Permanent removal of Cumpleaños (Rule 14) */
+      document.head.appendChild(style);
+    }
+
+    const hideBirthdays = this.shouldHideBirthdays();
+    const showOther = this.shouldShowOtherCalendars();
+
+    style.textContent = `
+        /* 1. Removal of Cumpleaños (when enabled, default: true) */
+        ${hideBirthdays ? `
         [data-property*="birthday" i],
         [data-property*="cumpleaño" i],
         [aria-label*="Cumpleaños" i],
@@ -66,6 +92,7 @@ export class GoogleCalendarAdapter {
         li:has([aria-label*="Birthdays" i]),
         .XXcuqd:has([aria-label*="Cumpleaños" i]),
         .XXcuqd:has([aria-label*="Birthdays" i]),
+        ` : ''}
 
         /* 2. Top Header: Help button (?) */
         [jsname="bMWlzf"],
@@ -95,12 +122,14 @@ export class GoogleCalendarAdapter {
         .qOsM1d:has([aria-label*="Páginas de reserva" i]),
         .qOsM1d:has(.az313e),
 
-        /* 6. Sidebar: "Otros calendarios" section (header, divider & list) */
+        /* 6. Sidebar: "Otros calendarios" section (hidden by default unless enabled in settings) */
+        ${!showOther ? `
         .qZvm2d-clz4Ic,
         .GSVYRe:has([aria-label*="Otros calendarios" i]),
         .GSVYRe:has(.aIwHYe),
         #tkQpTb,
         [jsname="tkQpTb"],
+        ` : ''}
 
         /* 7. Sidebar footer: "Términos – Privacidad" */
         .erDb5d,
@@ -129,10 +158,12 @@ export class GoogleCalendarAdapter {
           transition: none !important;
         }
 
-        /* 9. Fluid tab filtering (Rule 14: Cumpleaños always removed) */
+        /* 9. Fluid tab filtering */
+        ${hideBirthdays ? `
         .XXcuqd[data-gcal-type="birthday"] {
           display: none !important;
         }
+        ` : ''}
 
         /* Filtered out items smoothly collapse to 0 height and fade out */
         body[data-gcal-tab="CLASES"] .XXcuqd[data-gcal-type="academic"],
@@ -154,7 +185,7 @@ export class GoogleCalendarAdapter {
                       visibility 0.22s !important;
         }
 
-        body[data-gcal-tab="TODO"] .XXcuqd:not([data-gcal-type="birthday"]) {
+        body[data-gcal-tab="TODO"] .XXcuqd${hideBirthdays ? ':not([data-gcal-type="birthday"])' : ''} {
           max-height: 48px !important;
           opacity: 1 !important;
           visibility: visible !important;
@@ -200,8 +231,6 @@ export class GoogleCalendarAdapter {
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
         }
       `;
-      document.head.appendChild(style);
-    }
   }
 
   public isAcademic(name: string): boolean {
@@ -347,7 +376,7 @@ export class GoogleCalendarAdapter {
           const isChecked = cb instanceof HTMLInputElement ? cb.checked : cb.getAttribute('aria-checked') === 'true';
 
           if (this.isBirthday(rawName)) {
-            if (isChecked) {
+            if (isChecked && this.shouldHideBirthdays()) {
               cb.click();
             }
             return;
@@ -393,6 +422,7 @@ export class GoogleCalendarAdapter {
 
         return true;
       }
+      return false;
     }
 
     const targetUrl = formatAcademicEventUrl(payload);
@@ -645,14 +675,6 @@ export class GoogleCalendarAdapter {
       const lower = subject.toLowerCase().trim();
       if (colorMap.has(lower)) return colorMap.get(lower)!;
 
-      // Keyword matching against primary subjects
-      if (clean.includes('computador')) return colorMap.get('computadores') || '#B69A31';
-      if (clean.includes('programac')) return colorMap.get('programacion') || '#90B0C4';
-      if (clean.includes('econom')) return colorMap.get('economia') || '#96BCBB';
-      if (clean.includes('derech')) return colorMap.get('derecho') || '#C2842D';
-      if (clean.includes('matemat')) return colorMap.get('matematicas') || '#BAB35A';
-      if (clean.includes('market')) return colorMap.get('marketing') || '#6B8D8A';
-
       for (const [key, color] of colorMap.entries()) {
         if (clean.length >= 3 && (key.includes(clean) || clean.includes(key))) {
           return color;
@@ -725,7 +747,7 @@ export class GoogleCalendarAdapter {
       const ariaHidden = chip.querySelector('.XuJrye')?.textContent || '';
       const allText = `${chip.innerText || ''} ${rawAria} ${ariaHidden}`;
 
-      const isAcademic = /examen|entrega|entegra/i.test(allText);
+      const isAcademic = /examen|exam|entrega|entegra|deadline|assignment|due/i.test(allText);
       if (!isAcademic) {
         const existing = chip.querySelector('.custom-academic-container');
         if (existing) {
@@ -764,9 +786,9 @@ export class GoogleCalendarAdapter {
 
       // Parse components: 1 Tipo, 2 Asignatura, 3 Título
       let type: EventType = 'EXAMEN';
-      if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText)) {
+      if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|deadline|assignment|due/i.test(allText)) {
         type = 'ENTREGA';
-      } else if (/calendario:\s*[^,]*examen/i.test(allText) || /\[EXAMEN\]/i.test(allText)) {
+      } else if (/calendario:\s*[^,]*exam/i.test(allText) || /\[EXAMEN\]/i.test(allText) || /examen|exam/i.test(allText)) {
         type = 'EXAMEN';
       } else if (/entrega|entegra/i.test(allText)) {
         type = 'ENTREGA';
@@ -822,13 +844,15 @@ export class GoogleCalendarAdapter {
         }
 
         if (!subject) {
-          if (cleanAll.includes('computador')) subject = 'Computadores';
-          else if (cleanAll.includes('programac')) subject = 'Programación';
-          else if (cleanAll.includes('econom')) subject = 'Economía';
-          else if (cleanAll.includes('derech')) subject = 'Derecho';
-          else if (cleanAll.includes('matemat')) subject = 'Matemáticas';
-          else if (cleanAll.includes('market')) subject = 'Márketing';
-          else subject = 'Asignatura General';
+          for (const [key] of colorMap.entries()) {
+            if (key.length >= 3 && cleanAll.includes(key)) {
+              subject = key.charAt(0).toUpperCase() + key.slice(1);
+              break;
+            }
+          }
+          if (!subject) {
+            subject = 'Asignatura General';
+          }
         }
       }
 
