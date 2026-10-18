@@ -9,13 +9,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-Setup-1.0.0.exe"><img src="https://img.shields.io/badge/Descargar-Instalador_.exe-2563eb?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Instalador Windows" /></a>
-  <a href="https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-v1.0.0-windows-x64.zip"><img src="https://img.shields.io/badge/Portable-.zip_(x64)-475569?style=for-the-badge&logo=zip&logoColor=white" alt="Descargar Portable" /></a>
-  <a href="RELEASE_NOTES_v1.0.0.md"><img src="https://img.shields.io/badge/Release-v1.0.0-059669?style=for-the-badge&logo=github&logoColor=white" alt="Notas de Versión" /></a>
+  <a href="https://github.com/dukecorse1972/cursa/releases/download/v1.0.4/Cursa-Setup-1.0.4.exe"><img src="https://img.shields.io/badge/Descargar-Instalador_.exe-2563eb?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Instalador Windows" /></a>
+  <a href="https://github.com/dukecorse1972/cursa/releases/download/v1.0.4/Cursa-v1.0.4-windows-x64.zip"><img src="https://img.shields.io/badge/Portable-.zip_(x64)-475569?style=for-the-badge&logo=zip&logoColor=white" alt="Descargar Portable" /></a>
+  <a href="RELEASE_NOTES_v1.0.4.md"><img src="https://img.shields.io/badge/Release-v1.0.4-059669?style=for-the-badge&logo=github&logoColor=white" alt="Notas de Versión" /></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Tests-58%2F58%20Passing-brightgreen?style=flat-square&logo=node.js&logoColor=white" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-84%2F84%20Passing-brightgreen?style=flat-square&logo=node.js&logoColor=white" alt="Tests" />
   <img src="https://img.shields.io/badge/Electron-33.4.11-47848F?style=flat-square&logo=electron&logoColor=white" alt="Electron" />
   <img src="https://img.shields.io/badge/TypeScript-5.7.2-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Licencia-MIT-yellow?style=flat-square" alt="Licencia" />
@@ -106,12 +106,12 @@ Selección en 1 clic entre 4 paletas estéticas curadas de papelería universita
 ## 🚀 Instalación y Puesta en Marcha
 
 ### Opción 1: Instalador Oficial (.exe) — Recomendado
-1. Descarga [`Cursa-Setup-1.0.0.exe`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-Setup-1.0.0.exe).
+1. Descarga [`Cursa-Setup-1.0.4.exe`](https://github.com/dukecorse1972/cursa/releases/download/v1.0.4/Cursa-Setup-1.0.4.exe).
 2. Ejecuta el asistente. Se instala en `%LOCALAPPDATA%\Programs\Cursa` sin requerir permisos de administrador ni ventanas UAC.
 3. Crea accesos directos en el **Escritorio** y en el **Menú de Inicio** automáticamente.
 
 ### Opción 2: Versión Portable (.zip)
-1. Descarga [`Cursa-v1.0.0-windows-x64.zip`](https://github.com/dukecorse1972/academic-calendar-desktop/releases/download/v1.0.0/Cursa-v1.0.0-windows-x64.zip).
+1. Descarga [`Cursa-v1.0.4-windows-x64.zip`](https://github.com/dukecorse1972/cursa/releases/download/v1.0.4/Cursa-v1.0.4-windows-x64.zip).
 2. Descomprime y ejecuta `Cursa.exe`. Ideal para llevar en USB sin tocar el sistema.
 
 ---
@@ -136,13 +136,13 @@ Selección en 1 clic entre 4 paletas estéticas curadas de papelería universita
 ### Inicio Rápido
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/dukecorse1972/academic-calendar-desktop.git
-cd academic-calendar-desktop
+git clone https://github.com/dukecorse1972/cursa.git
+cd cursa
 
 # 2. Instalar dependencias
 npm install
 
-# 3. Ejecutar las 58 pruebas automatizadas
+# 3. Ejecutar las 84 pruebas automatizadas
 npm test
 
 # 4. Iniciar en desarrollo
@@ -153,7 +153,7 @@ npm start
 | Comando | Función |
 |---|---|
 | `npm start` | Compila TypeScript y arranca la app en Electron |
-| `npm test` | Ejecuta la suite de 58 pruebas unitarias con el runner nativo de Node.js |
+| `npm test` | Ejecuta la suite de 84 pruebas unitarias con el runner nativo de Node.js |
 | `npm run pack` | Empaqueta la versión portable en `release/win-unpacked/` |
 | `npm run dist` | Genera el instalador oficial NSIS (`.exe`) en `release/` |
 | `npm run shortcut` | Genera o repara los accesos directos en Windows |

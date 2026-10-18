@@ -26,17 +26,28 @@ async function main() {
     process.exit(1);
   }
 
+  const pkgPath = path.join(__dirname, '..', 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  const version = pkg.version;
+  const tag = `v${version}`;
   const owner = 'dukecorse1972';
-  const repo = 'academic-calendar-desktop';
-  const tag = 'v1.0.0';
+  const repo = 'cursa';
 
-  console.log(`Checking existing releases for ${owner}/${repo}...`);
+  console.log(`Checking existing releases for ${owner}/${repo} at tag ${tag}...`);
   const headers = {
     'Accept': 'application/vnd.github+json',
     'Authorization': `Bearer ${token}`,
     'User-Agent': 'Node-Release-Uploader',
     'X-GitHub-Api-Version': '2022-11-28'
   };
+
+  const releaseNotesPath = path.join(__dirname, '..', `RELEASE_NOTES_v${version}.md`);
+  let releaseBody = '';
+  if (fs.existsSync(releaseNotesPath)) {
+    releaseBody = fs.readFileSync(releaseNotesPath, 'utf8');
+  } else {
+    releaseBody = `## 🎓 Cursa v${version} Official Release\n\nOfficial production release for Cursa Desktop.`;
+  }
 
   let release;
   const getRelRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`, { headers });
@@ -45,36 +56,12 @@ async function main() {
     console.log(`Found existing release: ${release.name} (id: ${release.id})`);
   } else if (getRelRes.status === 404) {
     console.log(`Creating release for tag ${tag}...`);
-    const releaseBody = `## 🎓 Cursa v1.0.0 — Primera Versión Oficial
-
-¡Bienvenido a la primera versión de **Cursa**, el entorno de productividad académica sobre Google Calendar para Windows!
-
-### 📦 Archivos Disponibles para Descarga
-
-1. **\`Cursa-Setup-1.0.0.exe\` (Recomendado)**:
-   * Instalador interactivo oficial para Windows 10 y 11 (64-bit).
-   * **Cero permisos de administrador requeridos** (\`perMachine: false\`, instalado en \`%LOCALAPPDATA%\`).
-   * Asistente personalizado con identidad visual académica.
-   * Crea accesos directos automáticos en el **Escritorio** y en el **Menú de Inicio**.
-   * Se inicia inmediatamente tras la instalación y soporta desinstalación limpia desde la configuración de Windows.
-
-2. **\`Cursa-v1.0.0-windows-x64.zip\` (Portable)**:
-   * Versión portable descomprimible directa sin necesidad de instalación.
-
----
-
-### ✨ Características Clave
-* **Contextos Académicos**: Pestañas de filtrado dinámico para **CLASES**, **ENTREGAS Y EXÁMENES** y **TODO**.
-* **Diseño Visual Badge Pro**: Resalte con contrastes matemáticos HSL y borde dorado para exámenes.
-* **Integración Segura**: Aislamiento estricto de contexto con Chromium Sandbox y partición de sesión segura.
-* **Suite de Pruebas**: 58 pruebas automatizadas verificadas.`;
-
     const createRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tag_name: tag,
-        name: 'Cursa v1.0.0 — Official Windows Release',
+        name: `Cursa Desktop v${version} — Official Windows Release`,
         body: releaseBody,
         draft: false,
         prerelease: false
@@ -98,13 +85,13 @@ async function main() {
   const releaseDir = path.join(__dirname, '..', 'release');
   const filesToUpload = [
     {
-      fileName: 'Cursa-Setup-1.0.0.exe',
-      filePath: path.join(releaseDir, 'Cursa-Setup-1.0.0.exe'),
+      fileName: `Cursa-Setup-${version}.exe`,
+      filePath: path.join(releaseDir, `Cursa-Setup-${version}.exe`),
       contentType: 'application/octet-stream'
     },
     {
-      fileName: 'Cursa-v1.0.0-windows-x64.zip',
-      filePath: path.join(releaseDir, 'Cursa-v1.0.0-windows-x64.zip'),
+      fileName: `Cursa-v${version}-windows-x64.zip`,
+      filePath: path.join(releaseDir, `Cursa-v${version}-windows-x64.zip`),
       contentType: 'application/zip'
     }
   ];
@@ -127,9 +114,6 @@ async function main() {
     console.log(`Uploading ${item.fileName} (${(stats.size / 1024 / 1024).toFixed(1)} MB)...`);
 
     const uploadUrl = release.upload_url.replace(/\{(\?name,label)?\}/, `?name=${encodeURIComponent(item.fileName)}`);
-    const fileStream = fs.createReadStream(item.filePath);
-
-    // Using node fetch with stream or buffer
     const fileBuffer = fs.readFileSync(item.filePath);
 
     const uploadRes = await fetch(uploadUrl, {
