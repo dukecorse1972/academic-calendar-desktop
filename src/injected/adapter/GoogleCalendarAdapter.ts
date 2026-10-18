@@ -238,11 +238,11 @@ export class GoogleCalendarAdapter {
   }
 
   public isAcademic(name: string): boolean {
-    return /examen|exam|entrega|entegra|pr[aá]ctica|laboratorio|proyecto|control|parcial|quiz|deadline|assignment|due|klausur|prüfung|devoir|assignement/i.test(name);
+    return /examen|exam|entrega|entegra|control|parcial|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir|assignement/i.test(name);
   }
 
   public isOther(name: string): boolean {
-    return /task|tarea|festivo|holiday|feiertag|vacance|vacaci|ferie/i.test(name);
+    return /task|tarea|festivo|holiday|feiertag|vacance|vacaci|ferie|recordatorio|reminder/i.test(name);
   }
 
   public isBirthday(name: string): boolean {
@@ -260,11 +260,17 @@ export class GoogleCalendarAdapter {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const clean = this.normalizeStr(name);
-          return parsed.some((p: any) => {
+          const matchesSubject = parsed.some((p: any) => {
             const subName = typeof p === 'string' ? p : p.name;
             const cleanSub = this.normalizeStr(subName || '');
             return cleanSub && (cleanSub === clean || clean.includes(cleanSub) || cleanSub.includes(clean));
           });
+          if (matchesSubject) return true;
+          // Also explicitly recognize common class-type calendars (e.g. "Teoría", "Prácticas", "Laboratorio", "Seminario", "Taller")
+          if (/teor[ií]a|pr[aá]ctica|laboratorio|seminario|taller/i.test(name)) {
+            return true;
+          }
+          return false;
         }
       } catch (_) {}
     }
@@ -760,7 +766,7 @@ export class GoogleCalendarAdapter {
       const ariaHidden = chip.querySelector('.XuJrye')?.textContent || '';
       const allText = `${chip.innerText || ''} ${rawAria} ${ariaHidden}`;
 
-      const isAcademic = /examen|exam|entrega|entegra|pr[aá]ctica|laboratorio|proyecto|control|parcial|quiz|deadline|assignment|due/i.test(allText);
+      const isAcademic = /\[?(EXAMEN|ENTREGA)\]?|calendario:\s*[^,]*(exam|ent[er]gra)|entrega|entegra|examen|exam|parcial|control|quiz|deadline|assignment|due|klausur|pr[üu]fung|devoir/i.test(allText);
       if (!isAcademic) {
         const existing = chip.querySelector('.custom-academic-container');
         if (existing) {
@@ -799,11 +805,11 @@ export class GoogleCalendarAdapter {
 
       // Parse components: 1 Tipo, 2 Asignatura, 3 Título
       let type: EventType = 'EXAMEN';
-      if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|pr[aá]ctica|laboratorio|proyecto|deadline|assignment|due/i.test(allText)) {
+      if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|deadline|assignment|due|devoir/i.test(allText)) {
         type = 'ENTREGA';
-      } else if (/calendario:\s*[^,]*exam/i.test(allText) || /\[EXAMEN\]/i.test(allText) || /examen|exam|parcial|control|quiz/i.test(allText)) {
+      } else if (/calendario:\s*[^,]*exam/i.test(allText) || /\[EXAMEN\]/i.test(allText) || /examen|exam|parcial|control|quiz|klausur|pr[üu]fung/i.test(allText)) {
         type = 'EXAMEN';
-      } else if (/entrega|entegra|pr[aá]ctica|laboratorio|proyecto/i.test(allText)) {
+      } else if (/entrega|entegra|deadline|assignment|due/i.test(allText)) {
         type = 'ENTREGA';
       }
 

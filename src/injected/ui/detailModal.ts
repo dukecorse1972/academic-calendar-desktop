@@ -118,7 +118,7 @@ export class AcademicDetailModal {
 
     // 1. Type
     let type: 'EXAMEN' | 'ENTREGA' = 'EXAMEN';
-    if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|pr[aá]ctica|laboratorio|proyecto|deadline|assignment|due/i.test(allText)) {
+    if (/calendario:\s*[^,]*ent[er]gra/i.test(allText) || /\[ENTREGA\]/i.test(allText) || /entrega|entegra|deadline|assignment|due|devoir/i.test(allText)) {
       type = 'ENTREGA';
     }
 

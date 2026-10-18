@@ -1,7 +1,7 @@
 {
   "name": "cursa-desktop",
   "productName": "Cursa",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Desktop companion and academic productivity workstation for Google Calendar on Windows",
   "main": "dist/main/index.js",
   "scripts": {

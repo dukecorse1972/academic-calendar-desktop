@@ -143,7 +143,7 @@ describe('17. Multilingual Selectors & Semantic Resilient Cascade [P1-03]', () =
 describe('18. Whitelist-Based isClass Classification [P0-02]', () => {
   const adapter = GoogleCalendarAdapter.getInstance();
 
-  test('isClass returns true for configured onboarding subjects', () => {
+  test('isClass returns true for configured onboarding subjects and their theoretical/practical forms', () => {
     // Configure mock isolated subjects
     setIsolatedItem('gcal_academic_subjects', JSON.stringify([
       { name: 'Álgebra Lineal', color: '#98D5E8' },
@@ -153,6 +153,12 @@ describe('18. Whitelist-Based isClass Classification [P0-02]', () => {
     assert.ok(adapter.isClass('Álgebra Lineal'));
     assert.ok(adapter.isClass('Física I'));
     assert.ok(adapter.isClass('algebra lineal')); // Accent and case insensitive
+    assert.ok(adapter.isClass('Álgebra Lineal (Prácticas)'));
+    assert.ok(adapter.isClass('Física I (Laboratorio)'));
+    assert.ok(adapter.isClass('Prácticas de Álgebra Lineal'));
+    assert.ok(adapter.isClass('Teoría de Física I'));
+    assert.ok(adapter.isClass('Prácticas'));
+    assert.ok(adapter.isClass('Teoría'));
   });
 
   test('isClass returns false for non-class calendar names (birthdays, personal, exams, holidays)', () => {
@@ -236,9 +242,15 @@ describe('21. Production Generalization & Creator Independence [P0/P1/P2]', () =
     assert.equal(adapter.shouldShowOtherCalendars(), true);
   });
 
-  test('Academic synonyms (práctica, laboratorio, proyecto, control, parcial, quiz) are recognized as academic', () => {
-    assert.ok(adapter.isAcademic('Práctica 3 de Redes'));
-    assert.ok(adapter.isAcademic('Laboratorio de Física'));
+  test('Academic deliverables/exams vs practical classes classification', () => {
+    // Regular practical and lab classes are classes, NOT academic deliverables/exams
+    assert.ok(!adapter.isAcademic('Práctica 3 de Redes'));
+    assert.ok(!adapter.isAcademic('Laboratorio de Física'));
+    assert.ok(adapter.isClass('Práctica 3 de Redes'));
+    assert.ok(adapter.isClass('Laboratorio de Física'));
+
+    // Actual deliverables, deadlines, tests, and exams ARE recognized as academic
+    assert.ok(adapter.isAcademic('Entrega Práctica 3 de Redes'));
     assert.ok(adapter.isAcademic('Entrega Proyecto Final'));
     assert.ok(adapter.isAcademic('Primer Parcial'));
     assert.ok(adapter.isAcademic('Quiz 1'));
